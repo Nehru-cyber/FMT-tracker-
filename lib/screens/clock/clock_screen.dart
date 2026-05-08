@@ -154,7 +154,7 @@ class _ClockScreenState extends State<ClockScreen> with SingleTickerProviderStat
             _timerRemainingSeconds--;
           });
         } else {
-          _stopTimer();
+          _pauseTimer();
           _triggerAlarm("Time's Up!");
         }
       });
@@ -353,7 +353,7 @@ class _ClockScreenState extends State<ClockScreen> with SingleTickerProviderStat
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _pickAlarmTime,
-                          icon: const Icon(Icons.edit_time),
+                          icon: const Icon(Icons.access_time),
                           label: const Text('Set Time'),
                         ),
                       ),
