@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/business.dart';
 import '../models/business_transaction.dart';
 import '../services/business_service.dart';
+import '../services/database_service.dart';
 
 class BusinessProvider extends ChangeNotifier {
   List<Business> _businesses = [];
@@ -16,28 +17,28 @@ class BusinessProvider extends ChangeNotifier {
   List<BusinessTransaction> get transactions => _transactions;
   bool get isLoading => _isLoading;
   
-  Map<String, double> get profitLoss {
+  Future<Map<String, double>> getProfitLoss() async {
     if (_selectedBusiness == null) return {'income': 0, 'expense': 0, 'profit': 0};
-    return BusinessService.calculateProfitLoss(_selectedBusiness!.id);
+    return await BusinessService.calculateProfitLoss(_selectedBusiness!.id);
   }
   
-  void loadBusinesses(String userId) {
+  Future<void> loadBusinesses(String userId) async {
     _isLoading = true;
     notifyListeners();
     
-    _businesses = BusinessService.getBusinesses(userId);
+    _businesses = await BusinessService.getBusinesses(userId);
     if (_businesses.isNotEmpty && _selectedBusiness == null) {
-      selectBusiness(_businesses.first);
+      await selectBusiness(_businesses.first);
     }
     
     _isLoading = false;
     notifyListeners();
   }
   
-  void selectBusiness(Business business) {
+  Future<void> selectBusiness(Business business) async {
     _selectedBusiness = business;
-    _customers = BusinessService.getCustomers(business.id);
-    _transactions = BusinessService.getTransactions(business.id);
+    _customers = await BusinessService.getCustomers(business.id);
+    _transactions = await BusinessService.getTransactions(business.id);
     notifyListeners();
   }
   
@@ -52,7 +53,7 @@ class BusinessProvider extends ChangeNotifier {
       type: type,
     );
     _businesses.add(business);
-    selectBusiness(business);
+    await selectBusiness(business);
   }
   
   Future<void> addTransaction({
@@ -72,10 +73,37 @@ class BusinessProvider extends ChangeNotifier {
       date: date,
       note: note,
     );
-    _transactions = BusinessService.getTransactions(_selectedBusiness!.id);
+    _transactions = await BusinessService.getTransactions(_selectedBusiness!.id);
     notifyListeners();
   }
   
+  Future<void> updateTransaction({
+    required String id,
+    required double amount,
+    required TransactionType type,
+    required DateTime date,
+    String note = '',
+  }) async {
+    if (_selectedBusiness == null) return;
+    final existing = _transactions.firstWhere((t) => t.id == id);
+    final updated = existing.copyWith(
+      amount: amount,
+      type: type,
+      date: date,
+      note: note,
+    );
+    await DatabaseService.saveTransaction(updated);
+    _transactions = await BusinessService.getTransactions(_selectedBusiness!.id);
+    notifyListeners();
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    if (_selectedBusiness == null) return;
+    await DatabaseService.deleteTransaction(id);
+    _transactions = await BusinessService.getTransactions(_selectedBusiness!.id);
+    notifyListeners();
+  }
+
   Future<void> addCustomer({
     required String name,
     required String phone,
@@ -87,7 +115,27 @@ class BusinessProvider extends ChangeNotifier {
       name: name,
       phone: phone,
     );
-    _customers = BusinessService.getCustomers(_selectedBusiness!.id);
+    _customers = await BusinessService.getCustomers(_selectedBusiness!.id);
+    notifyListeners();
+  }
+
+  Future<void> updateCustomer({
+    required String id,
+    required String name,
+    required String phone,
+  }) async {
+    if (_selectedBusiness == null) return;
+    final existing = _customers.firstWhere((c) => c.id == id);
+    final updated = existing.copyWith(name: name, phone: phone);
+    await DatabaseService.saveCustomer(updated);
+    _customers = await BusinessService.getCustomers(_selectedBusiness!.id);
+    notifyListeners();
+  }
+
+  Future<void> deleteCustomer(String id) async {
+    if (_selectedBusiness == null) return;
+    await DatabaseService.deleteCustomer(id);
+    _customers = await BusinessService.getCustomers(_selectedBusiness!.id);
     notifyListeners();
   }
 }

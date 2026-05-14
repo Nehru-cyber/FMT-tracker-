@@ -11,7 +11,6 @@ import '../../providers/emi_provider.dart';
 import '../../providers/salary_provider.dart';
 import '../../models/expense.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
-import '../../widgets/common/stat_card.dart';
 import '../../widgets/home/alerts_section.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -390,12 +389,29 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         title: Text(expense.category, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(DateFormat('dd MMM').format(expense.date)),
-        trailing: Text(
-          '${isIncome ? '+' : '-'}$currency${expense.amount.toStringAsFixed(0)}',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${isIncome ? '+' : '-'}$currency${expense.amount.toStringAsFixed(0)}',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              color: AppTheme.primaryColor,
+              onPressed: () {
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.addExpense,
+                  arguments: {'expense': expense},
+                ).then((_) => _loadData());
+              },
+            ),
+          ],
         ),
       ),
     );

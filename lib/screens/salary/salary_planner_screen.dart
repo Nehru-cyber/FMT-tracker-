@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
@@ -83,31 +84,42 @@ class _SalaryPlannerScreenState extends State<SalaryPlannerScreen> {
   void _addFixedExpense() {
     final nameController = TextEditingController();
     final amountController = TextEditingController();
+    final dialogFormKey = GlobalKey<FormState>();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Fixed Expense'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name (e.g., Rent, EMI)'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Amount'),
-            ),
-          ],
+        content: Form(
+          key: dialogFormKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name (e.g., Rent, EMI)'),
+                validator: (value) => value == null || value.isEmpty ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                decoration: const InputDecoration(labelText: 'Amount'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Amount is required';
+                  if (double.tryParse(value) == null) return 'Enter a valid number';
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty && amountController.text.isNotEmpty) {
+              if (dialogFormKey.currentState!.validate()) {
                 setState(() {
                   _fixedExpenses.add(FixedExpense(
                     name: nameController.text,
@@ -118,6 +130,62 @@ class _SalaryPlannerScreenState extends State<SalaryPlannerScreen> {
               }
             },
             child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editFixedExpense(int index) {
+    final expense = _fixedExpenses[index];
+    final nameController = TextEditingController(text: expense.name);
+    final amountController = TextEditingController(text: expense.amount.toString());
+    final dialogFormKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Fixed Expense'),
+        content: Form(
+          key: dialogFormKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name (e.g., Rent, EMI)'),
+                validator: (value) => value == null || value.isEmpty ? 'Name is required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                decoration: const InputDecoration(labelText: 'Amount'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Amount is required';
+                  if (double.tryParse(value) == null) return 'Enter a valid number';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              if (dialogFormKey.currentState!.validate()) {
+                setState(() {
+                  _fixedExpenses[index] = FixedExpense(
+                    name: nameController.text,
+                    amount: double.parse(amountController.text),
+                  );
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Update'),
           ),
         ],
       ),
@@ -206,6 +274,7 @@ class _SalaryPlannerScreenState extends State<SalaryPlannerScreen> {
             TextFormField(
               controller: _salaryController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               decoration: InputDecoration(prefixText: '${settings.currencySymbol} '),
               validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
             ),
@@ -239,6 +308,10 @@ class _SalaryPlannerScreenState extends State<SalaryPlannerScreen> {
                       children: [
                         Text(currencyFormat.format(expense.amount), style: const TextStyle(fontWeight: FontWeight.bold)),
                         IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor, size: 20),
+                          onPressed: () => _editFixedExpense(index),
+                        ),
+                        IconButton(
                           icon: const Icon(Icons.delete, color: AppTheme.errorColor),
                           onPressed: () => setState(() => _fixedExpenses.removeAt(index)),
                         ),
@@ -257,6 +330,7 @@ class _SalaryPlannerScreenState extends State<SalaryPlannerScreen> {
                   child: TextFormField(
                     controller: _savingsController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                     decoration: InputDecoration(
                       suffixText: _isPercentage ? '%' : settings.currencySymbol,
                     ),

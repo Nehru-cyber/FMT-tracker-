@@ -82,11 +82,13 @@ class AppRoutes {
       case tripPlanner:
         return _buildRoute(const TripPlanListScreen(), settings);
       case addTripPlan:
-        return _buildRoute(const AddTripPlanScreen(), settings);
+        final tripArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(AddTripPlanScreen(tripPlan: tripArgs?['tripPlan']), settings);
       case investments:
         return _buildRoute(const InvestmentListScreen(), settings);
       case addInvestment:
-        return _buildRoute(const AddInvestmentScreen(), settings);
+        final investArgs = settings.arguments as Map<String, dynamic>?;
+        return _buildRoute(AddInvestmentScreen(investment: investArgs?['investment']), settings);
       case gymTracker:
         return _buildRoute(const GymTrackerScreen(), settings);
       case dietTracker:

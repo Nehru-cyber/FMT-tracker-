@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class AppConstants {
@@ -69,18 +71,30 @@ class AppConstants {
     'Basic analytics',
   ];
   
-  // Hive Box Names
-  static const String userBox = 'users';
-  static const String expenseBox = 'expenses';
-  static const String categoryBox = 'categories';
-  static const String salaryBox = 'salary_plans';
-  static const String emiBox = 'emi_records';
-  static const String businessBox = 'businesses';
-  static const String transactionBox = 'business_transactions';
-  static const String customerBox = 'customers';
-  static const String settingsBox = 'settings';
-  static const String tripBox = 'trip_plans';
-  static const String investmentBox = 'investments';
+  // MongoDB Config
+  static String get mongoUrl {
+    if (kIsWeb) return 'mongodb://localhost:27017/fmt_tracker';
+    try {
+      if (Platform.isAndroid) return 'mongodb://10.0.2.2:27017/fmt_tracker';
+    } catch (e) {
+      // Platform.isAndroid throws on web, but we already check kIsWeb
+    }
+    return 'mongodb://localhost:27017/fmt_tracker';
+  }
+  static const String mongoDbName = 'fmt_tracker';
+
+  // Collection Names
+  static const String userCollection = 'users';
+  static const String expenseCollection = 'expenses';
+  static const String categoryCollection = 'categories';
+  static const String salaryCollection = 'salary_plans';
+  static const String emiCollection = 'emi_records';
+  static const String businessCollection = 'businesses';
+  static const String transactionCollection = 'business_transactions';
+  static const String customerCollection = 'customers';
+  static const String settingsCollection = 'settings';
+  static const String tripCollection = 'trip_plans';
+  static const String investmentCollection = 'investments';
   
   // Date Formats
   static const String dateFormat = 'dd MMM yyyy';

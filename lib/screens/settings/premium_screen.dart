@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import '../../config/theme.dart';
 import '../../config/constants.dart';
 import '../../services/premium_service.dart';
+import '../../providers/auth_provider.dart';
 
 class PremiumScreen extends StatelessWidget {
   const PremiumScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isPremium = PremiumService.isPremium();
+    final isPremium = context.watch<AuthProvider>().isPremium;
 
     return Scaffold(
       body: CustomScrollView(

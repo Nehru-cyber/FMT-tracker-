@@ -100,6 +100,21 @@ class _InvestmentListScreenState extends State<InvestmentListScreen> {
                             ),
                           ),
                           IconButton(
+                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor, size: 20),
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.addInvestment,
+                                arguments: {'investment': investment},
+                              ).then((_) {
+                                final userId = context.read<AuthProvider>().user?.id;
+                                if (userId != null) {
+                                  context.read<InvestmentProvider>().loadInvestments(userId);
+                                }
+                              });
+                            },
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
                             onPressed: () {
                               showDialog(

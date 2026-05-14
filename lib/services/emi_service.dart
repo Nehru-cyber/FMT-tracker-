@@ -64,13 +64,14 @@ class EMIService {
   }
   
   // Get all EMIs for user
-  static List<EMI> getEMIs(String userId) {
-    return DatabaseService.getEMIs(userId);
+  static Future<List<EMI>> getEMIs(String userId) async {
+    return await DatabaseService.getEMIs(userId);
   }
   
   // Get EMI by ID
-  static EMI? getEMI(String id) {
-    return DatabaseService.emiBox.get(id);
+  static Future<EMI?> getEMI(String id, String userId) async {
+    final emis = await DatabaseService.getEMIs(userId);
+    return emis.where((e) => e.id == id).firstOrNull;
   }
   
   // Delete EMI
@@ -79,14 +80,14 @@ class EMIService {
   }
   
   // Get total monthly EMI burden
-  static double getTotalMonthlyEMI(String userId) {
-    final emis = getEMIs(userId);
-    return emis.fold(0.0, (sum, emi) => sum + emi.monthlyEMI);
+  static Future<double> getTotalMonthlyEMI(String userId) async {
+    final emis = await getEMIs(userId);
+    return emis.fold<double>(0.0, (sum, emi) => sum + emi.monthlyEMI);
   }
   
   // Get upcoming EMI payments
-  static List<Map<String, dynamic>> getUpcomingPayments(String userId) {
-    final emis = getEMIs(userId);
+  static Future<List<Map<String, dynamic>>> getUpcomingPayments(String userId) async {
+    final emis = await getEMIs(userId);
     final now = DateTime.now();
     final payments = <Map<String, dynamic>>[];
     
@@ -180,8 +181,8 @@ class EMIService {
   }
   
   // Get EMI summary
-  static Map<String, dynamic> getEMISummary(String userId) {
-    final emis = getEMIs(userId);
+  static Future<Map<String, dynamic>> getEMISummary(String userId) async {
+    final emis = await getEMIs(userId);
     
     if (emis.isEmpty) {
       return {

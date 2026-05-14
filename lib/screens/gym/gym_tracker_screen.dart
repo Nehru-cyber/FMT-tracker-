@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../config/theme.dart';
 
 class GymTrackerScreen extends StatefulWidget {
@@ -45,6 +46,7 @@ class _GymTrackerScreenState extends State<GymTrackerScreen> {
                   child: TextField(
                     controller: setsCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(labelText: 'Sets'),
                   ),
                 ),
@@ -53,6 +55,7 @@ class _GymTrackerScreenState extends State<GymTrackerScreen> {
                   child: TextField(
                     controller: repsCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(labelText: 'Reps'),
                   ),
                 ),
@@ -61,6 +64,7 @@ class _GymTrackerScreenState extends State<GymTrackerScreen> {
                   child: TextField(
                     controller: weightCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                     decoration: const InputDecoration(labelText: 'Weight (kg)'),
                   ),
                 ),
@@ -83,6 +87,89 @@ class _GymTrackerScreenState extends State<GymTrackerScreen> {
               },
               icon: const Icon(Icons.check),
               label: const Text('Save Workout'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _editWorkout(int index) {
+    final w = _workouts[index];
+    final nameCtrl = TextEditingController(text: w['name']);
+    final setsCtrl = TextEditingController(text: w['sets'].toString());
+    final repsCtrl = TextEditingController(text: w['reps'].toString());
+    final weightCtrl = TextEditingController(text: w['weight'].toString());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Edit Workout', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 16),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Exercise Name',
+                prefixIcon: Icon(Icons.fitness_center),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: setsCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(labelText: 'Sets'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: repsCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    decoration: const InputDecoration(labelText: 'Reps'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: weightCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                    decoration: const InputDecoration(labelText: 'Weight (kg)'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () {
+                if (nameCtrl.text.trim().isEmpty) return;
+                setState(() {
+                  _workouts[index] = {
+                    'name': nameCtrl.text.trim(),
+                    'sets': int.tryParse(setsCtrl.text) ?? 0,
+                    'reps': int.tryParse(repsCtrl.text) ?? 0,
+                    'weight': double.tryParse(weightCtrl.text) ?? 0.0,
+                    'date': w['date'],
+                  };
+                });
+                Navigator.pop(context);
+              },
+              icon: const Icon(Icons.check),
+              label: const Text('Update Workout'),
             ),
           ],
         ),
@@ -179,9 +266,18 @@ class _GymTrackerScreenState extends State<GymTrackerScreen> {
                         ),
                         title: Text(w['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('${w['sets']} sets × ${w['reps']} reps • ${w['weight']} kg'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
-                          onPressed: () => setState(() => _workouts.removeAt(index)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined, color: Color(0xFF7C3AED), size: 20),
+                              onPressed: () => _editWorkout(index),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
+                              onPressed: () => setState(() => _workouts.removeAt(index)),
+                            ),
+                          ],
                         ),
                       ),
                     );

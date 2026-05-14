@@ -184,4 +184,23 @@ class EMI extends HiveObject {
       'isReminderEnabled': isReminderEnabled,
     };
   }
+
+  factory EMI.fromJson(Map<String, dynamic> json) {
+    return EMI(
+      id: json['id'],
+      userId: json['userId'],
+      name: json['name'] ?? '',
+      loanAmount: (json['loanAmount'] as num).toDouble(),
+      interestRate: (json['interestRate'] as num).toDouble(),
+      tenureMonths: json['tenureMonths'],
+      monthlyEMI: (json['monthlyEMI'] as num).toDouble(),
+      totalInterest: (json['totalInterest'] as num).toDouble(),
+      totalPayable: (json['totalPayable'] as num).toDouble(),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      startDate: json['startDate'] != null ? DateTime.parse(json['startDate']) : null,
+      paymentDay: json['paymentDay'] ?? 5,
+      reminderDaysBefore: json['reminderDaysBefore'] ?? 2,
+      isReminderEnabled: json['isReminderEnabled'] ?? true,
+    );
+  }
 }

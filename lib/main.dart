@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'config/theme.dart';
 import 'config/routes.dart';
@@ -22,19 +20,30 @@ import 'screens/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive
-  await Hive.initFlutter();
-  await DatabaseService.initialize();
+  // Initialize Database
+  try {
+    await DatabaseService.initialize();
+  } catch (e) {
+    debugPrint('Database initialization failed: $e');
+  }
   
   // Initialize Notifications
-  await NotificationService.initialize();
-  await NotificationService.requestPermissions();
+  try {
+    await NotificationService.initialize();
+    await NotificationService.requestPermissions();
+  } catch (e) {
+    debugPrint('Notification initialization failed: $e');
+  }
   
   // Set preferred orientations
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+  try {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } catch (e) {
+    debugPrint('Orientation setup failed: $e');
+  }
   
   runApp(const FMTTrackerApp());
 }

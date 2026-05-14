@@ -26,8 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadSavedCredentials();
   }
 
-  void _loadSavedCredentials() {
-    final saved = AuthService.getSavedCredentials();
+  Future<void> _loadSavedCredentials() async {
+    final saved = await AuthService.getSavedCredentials();
     if (saved['email'] != null) {
       _emailController.text = saved['email']!;
       _rememberMe = true;

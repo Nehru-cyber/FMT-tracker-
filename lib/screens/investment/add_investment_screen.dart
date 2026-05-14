@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../models/investment.dart';
 import '../../providers/investment_provider.dart';
 import '../../providers/auth_provider.dart';
 
 class AddInvestmentScreen extends StatefulWidget {
-  const AddInvestmentScreen({super.key});
+  final Investment? investment;
+  const AddInvestmentScreen({super.key, this.investment});
 
   @override
   State<AddInvestmentScreen> createState() => _AddInvestmentScreenState();
@@ -29,11 +32,19 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
   int _investDay = 1;
   bool _isLoading = false;
 
+  bool get _isEditing => widget.investment != null;
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _amountController = TextEditingController();
+    _nameController = TextEditingController(text: widget.investment?.name ?? '');
+    _amountController = TextEditingController(
+      text: widget.investment != null ? widget.investment!.amount.toString() : '',
+    );
+    if (widget.investment != null) {
+      _selectedType = widget.investment!.type;
+      _investDay = widget.investment!.investDay;
+    }
   }
 
   @override
@@ -54,18 +65,29 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
 
       final amount = double.tryParse(_amountController.text) ?? 0.0;
 
-      await context.read<InvestmentProvider>().addInvestment(
-        userId: userId,
-        name: _nameController.text.trim(),
-        amount: amount,
-        investDay: _investDay,
-        type: _selectedType,
-      );
+      if (_isEditing) {
+        await context.read<InvestmentProvider>().updateInvestment(
+          id: widget.investment!.id,
+          userId: userId,
+          name: _nameController.text.trim(),
+          amount: amount,
+          investDay: _investDay,
+          type: _selectedType,
+        );
+      } else {
+        await context.read<InvestmentProvider>().addInvestment(
+          userId: userId,
+          name: _nameController.text.trim(),
+          amount: amount,
+          investDay: _investDay,
+          type: _selectedType,
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Investment tracked successfully!')),
+          SnackBar(content: Text(_isEditing ? 'Investment updated successfully!' : 'Investment tracked successfully!')),
         );
       }
     } catch (e) {
@@ -85,7 +107,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Investment'),
+        title: Text(_isEditing ? 'Edit Investment' : 'Add Investment'),
         actions: [
           if (_isLoading)
             const Center(
@@ -124,6 +146,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                 decoration: const InputDecoration(
                   labelText: 'Amount',
                   prefixIcon: Icon(Icons.attach_money),

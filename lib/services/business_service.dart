@@ -24,19 +24,19 @@ class BusinessService {
   }
   
   static Future<void> deleteBusiness(String id) async {
-    final transactions = DatabaseService.getTransactions(id);
+    final transactions = await DatabaseService.getTransactions(id);
     for (final t in transactions) {
       await DatabaseService.deleteTransaction(t.id);
     }
-    final customers = DatabaseService.getCustomers(id);
+    final customers = await DatabaseService.getCustomers(id);
     for (final c in customers) {
       await DatabaseService.deleteCustomer(c.id);
     }
     await DatabaseService.deleteBusiness(id);
   }
   
-  static List<Business> getBusinesses(String userId) {
-    return DatabaseService.getBusinesses(userId);
+  static Future<List<Business>> getBusinesses(String userId) async {
+    return await DatabaseService.getBusinesses(userId);
   }
   
   static Future<Customer> addCustomer({
@@ -58,8 +58,8 @@ class BusinessService {
     return customer;
   }
   
-  static List<Customer> getCustomers(String businessId) {
-    return DatabaseService.getCustomers(businessId);
+  static Future<List<Customer>> getCustomers(String businessId) async {
+    return await DatabaseService.getCustomers(businessId);
   }
   
   static Future<BusinessTransaction> addTransaction({
@@ -83,12 +83,12 @@ class BusinessService {
     return transaction;
   }
   
-  static List<BusinessTransaction> getTransactions(String businessId) {
-    return DatabaseService.getTransactions(businessId);
+  static Future<List<BusinessTransaction>> getTransactions(String businessId) async {
+    return await DatabaseService.getTransactions(businessId);
   }
   
-  static Map<String, double> calculateProfitLoss(String businessId) {
-    final transactions = getTransactions(businessId);
+  static Future<Map<String, double>> calculateProfitLoss(String businessId) async {
+    final transactions = await getTransactions(businessId);
     double totalIncome = 0;
     double totalExpense = 0;
     for (final t in transactions) {
@@ -105,13 +105,14 @@ class BusinessService {
     };
   }
   
-  static Map<String, dynamic> getBusinessSummary(String businessId) {
-    final business = DatabaseService.businessBox.get(businessId);
+  static Future<Map<String, dynamic>> getBusinessSummary(String businessId, String userId) async {
+    final businesses = await getBusinesses(userId);
+    final business = businesses.where((b) => b.id == businessId).firstOrNull;
     if (business == null) return {'exists': false};
     
-    final transactions = getTransactions(businessId);
-    final customers = getCustomers(businessId);
-    final profitLoss = calculateProfitLoss(businessId);
+    final transactions = await getTransactions(businessId);
+    final customers = await getCustomers(businessId);
+    final profitLoss = await calculateProfitLoss(businessId);
     
     return {
       'exists': true,

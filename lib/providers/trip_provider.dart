@@ -12,13 +12,13 @@ class TripProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  void loadTripPlans(String userId) {
+  Future<void> loadTripPlans(String userId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _tripPlans = DatabaseService.getTripPlans(userId);
+      _tripPlans = await DatabaseService.getTripPlans(userId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -45,6 +45,31 @@ class TripProvider extends ChangeNotifier {
 
       await DatabaseService.saveTripPlan(trip);
       _tripPlans.insert(0, trip);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateTripPlan(String id, String name, double cost, String dietPlan, List<String> friends, DateTime date) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final existing = _tripPlans.firstWhere((t) => t.id == id);
+      final updated = existing.copyWith(
+        name: name,
+        cost: cost,
+        dietPlan: dietPlan,
+        friends: friends,
+        date: date,
+      );
+      await DatabaseService.saveTripPlan(updated);
+      final idx = _tripPlans.indexWhere((t) => t.id == id);
+      if (idx != -1) _tripPlans[idx] = updated;
     } catch (e) {
       _error = e.toString();
     } finally {

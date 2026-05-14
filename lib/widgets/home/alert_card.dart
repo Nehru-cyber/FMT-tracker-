@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../config/theme.dart';
 
 enum AlertType { emiDue, incomeSoon, lowBalance, overspending }
 

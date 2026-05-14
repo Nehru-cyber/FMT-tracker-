@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../models/trip_plan.dart';
 import '../../providers/trip_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -7,7 +9,8 @@ import '../../config/constants.dart';
 import 'package:intl/intl.dart';
 
 class AddTripPlanScreen extends StatefulWidget {
-  const AddTripPlanScreen({super.key});
+  final TripPlan? tripPlan;
+  const AddTripPlanScreen({super.key, this.tripPlan});
 
   @override
   State<AddTripPlanScreen> createState() => _AddTripPlanScreenState();
@@ -21,15 +24,27 @@ class _AddTripPlanScreenState extends State<AddTripPlanScreen> {
   late TextEditingController _friendController;
 
   DateTime _selectedDate = DateTime.now();
-  final List<String> _friends = [];
+  late List<String> _friends;
   bool _isLoading = false;
+
+  bool get _isEditing => widget.tripPlan != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController();
-    _costController = TextEditingController();
+    _nameController = TextEditingController(text: widget.tripPlan?.name ?? '');
+    _costController = TextEditingController(
+      text: widget.tripPlan != null && widget.tripPlan!.cost > 0
+          ? widget.tripPlan!.cost.toString()
+          : '',
+    );
     _friendController = TextEditingController();
+    if (widget.tripPlan != null) {
+      _selectedDate = widget.tripPlan!.date;
+      _friends = List<String>.from(widget.tripPlan!.friends);
+    } else {
+      _friends = [];
+    }
   }
 
   @override
@@ -75,19 +90,30 @@ class _AddTripPlanScreenState extends State<AddTripPlanScreen> {
 
       final cost = double.tryParse(_costController.text) ?? 0.0;
 
-      await context.read<TripProvider>().addTripPlan(
-        userId,
-        _nameController.text.trim(),
-        cost,
-        '',
-        _friends,
-        _selectedDate,
-      );
+      if (_isEditing) {
+        await context.read<TripProvider>().updateTripPlan(
+          widget.tripPlan!.id,
+          _nameController.text.trim(),
+          cost,
+          '',
+          _friends,
+          _selectedDate,
+        );
+      } else {
+        await context.read<TripProvider>().addTripPlan(
+          userId,
+          _nameController.text.trim(),
+          cost,
+          '',
+          _friends,
+          _selectedDate,
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trip plan saved!')),
+          SnackBar(content: Text(_isEditing ? 'Trip plan updated!' : 'Trip plan saved!')),
         );
       }
     } catch (e) {
@@ -107,7 +133,7 @@ class _AddTripPlanScreenState extends State<AddTripPlanScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Trip Plan'),
+        title: Text(_isEditing ? 'Edit Trip Plan' : 'Add Trip Plan'),
         actions: [
           if (_isLoading)
             const Center(
@@ -159,6 +185,7 @@ class _AddTripPlanScreenState extends State<AddTripPlanScreen> {
                   return TextFormField(
                     controller: _costController,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
                     decoration: InputDecoration(
                       labelText: 'Estimated Cost',
                       prefixIcon: const Icon(Icons.attach_money),

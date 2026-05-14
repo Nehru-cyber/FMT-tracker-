@@ -12,8 +12,8 @@ class ThemeProvider extends ChangeNotifier {
     _loadTheme();
   }
   
-  void _loadTheme() {
-    final savedTheme = DatabaseService.getSetting(_themeKey, defaultValue: 'system');
+  Future<void> _loadTheme() async {
+    final savedTheme = await DatabaseService.getSetting(_themeKey, defaultValue: 'system');
     switch (savedTheme) {
       case 'light':
         _themeMode = ThemeMode.light;

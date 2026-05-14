@@ -77,6 +77,21 @@ class _TripPlanListScreenState extends State<TripPlanListScreen> {
                             ),
                           ),
                           IconButton(
+                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor, size: 20),
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                AppRoutes.addTripPlan,
+                                arguments: {'tripPlan': trip},
+                              ).then((_) {
+                                final userId = context.read<AuthProvider>().user?.id;
+                                if (userId != null) {
+                                  context.read<TripProvider>().loadTripPlans(userId);
+                                }
+                              });
+                            },
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
                             onPressed: () {
                               showDialog(

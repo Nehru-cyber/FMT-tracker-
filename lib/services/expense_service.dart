@@ -31,13 +31,15 @@ class ExpenseService {
   // Update expense
   static Future<Expense?> updateExpense({
     required String id,
+    required String userId,
     double? amount,
     String? category,
     DateTime? date,
     ExpenseType? type,
     String? note,
   }) async {
-    final expense = DatabaseService.expenseBox.get(id);
+    final expenses = await DatabaseService.getExpenses(userId);
+    final expense = expenses.where((e) => e.id == id).firstOrNull;
     if (expense == null) return null;
     
     final updated = expense.copyWith(
@@ -58,44 +60,44 @@ class ExpenseService {
   }
   
   // Get all expenses for user
-  static List<Expense> getExpenses(String userId) {
-    return DatabaseService.getExpenses(userId);
+  static Future<List<Expense>> getExpenses(String userId) async {
+    return await DatabaseService.getExpenses(userId);
   }
   
   // Get expenses by date range
-  static List<Expense> getExpensesByDateRange(
+  static Future<List<Expense>> getExpensesByDateRange(
     String userId,
     DateTime start,
     DateTime end,
-  ) {
-    return DatabaseService.getExpensesByDateRange(userId, start, end);
+  ) async {
+    return await DatabaseService.getExpensesByDateRange(userId, start, end);
   }
   
   // Get expenses by month
-  static List<Expense> getExpensesByMonth(String userId, int year, int month) {
-    return DatabaseService.getExpensesByMonth(userId, year, month);
+  static Future<List<Expense>> getExpensesByMonth(String userId, int year, int month) async {
+    return await DatabaseService.getExpensesByMonth(userId, year, month);
   }
   
   // Get today's expenses
-  static List<Expense> getTodayExpenses(String userId) {
+  static Future<List<Expense>> getTodayExpenses(String userId) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
-    return getExpensesByDateRange(userId, today, tomorrow);
+    return await getExpensesByDateRange(userId, today, tomorrow);
   }
   
   // Get this week's expenses
-  static List<Expense> getThisWeekExpenses(String userId) {
+  static Future<List<Expense>> getThisWeekExpenses(String userId) async {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
     final start = DateTime(weekStart.year, weekStart.month, weekStart.day);
-    return getExpensesByDateRange(userId, start, now);
+    return await getExpensesByDateRange(userId, start, now);
   }
   
   // Get this month's expenses
-  static List<Expense> getThisMonthExpenses(String userId) {
+  static Future<List<Expense>> getThisMonthExpenses(String userId) async {
     final now = DateTime.now();
-    return getExpensesByMonth(userId, now.year, now.month);
+    return await getExpensesByMonth(userId, now.year, now.month);
   }
   
   // Calculate totals
@@ -132,8 +134,8 @@ class ExpenseService {
   }
   
   // Get daily breakdown for a month
-  static Map<int, Map<String, double>> getDailyBreakdown(String userId, int year, int month) {
-    final expenses = getExpensesByMonth(userId, year, month);
+  static Future<Map<int, Map<String, double>>> getDailyBreakdown(String userId, int year, int month) async {
+    final expenses = await getExpensesByMonth(userId, year, month);
     final breakdown = <int, Map<String, double>>{};
     
     for (final expense in expenses) {
@@ -151,11 +153,11 @@ class ExpenseService {
   }
   
   // Get monthly breakdown for a year
-  static Map<int, Map<String, double>> getMonthlyBreakdown(String userId, int year) {
+  static Future<Map<int, Map<String, double>>> getMonthlyBreakdown(String userId, int year) async {
     final breakdown = <int, Map<String, double>>{};
     
     for (int month = 1; month <= 12; month++) {
-      final expenses = getExpensesByMonth(userId, year, month);
+      final expenses = await getExpensesByMonth(userId, year, month);
       final totals = calculateTotals(expenses);
       breakdown[month] = totals;
     }
@@ -164,8 +166,8 @@ class ExpenseService {
   }
   
   // Search expenses
-  static List<Expense> searchExpenses(String userId, String query) {
-    final expenses = getExpenses(userId);
+  static Future<List<Expense>> searchExpenses(String userId, String query) async {
+    final expenses = await getExpenses(userId);
     final lowerQuery = query.toLowerCase();
     
     return expenses.where((e) =>

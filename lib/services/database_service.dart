@@ -1,4 +1,4 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import '../models/user.dart';
 import '../models/expense.dart';
 import '../models/category.dart';
@@ -11,53 +11,22 @@ import '../models/investment.dart';
 import '../config/constants.dart';
 
 class DatabaseService {
-  static late Box<User> _userBox;
-  static late Box<Expense> _expenseBox;
-  static late Box<Category> _categoryBox;
-  static late Box<SalaryPlan> _salaryBox;
-  static late Box<EMI> _emiBox;
-  static late Box<Business> _businessBox;
-  static late Box<Customer> _customerBox;
-  static late Box<BusinessTransaction> _transactionBox;
-  static late Box<TripPlan> _tripBox;
-  static late Box<Investment> _investmentBox;
-  static late Box _settingsBox;
-  
+  static late Db _db;
+
   static Future<void> initialize() async {
-    // Register adapters
-    Hive.registerAdapter(UserAdapter());
-    Hive.registerAdapter(ExpenseTypeAdapter());
-    Hive.registerAdapter(ExpenseAdapter());
-    Hive.registerAdapter(CategoryAdapter());
-    Hive.registerAdapter(SalaryPlanAdapter());
-    Hive.registerAdapter(EMIAdapter());
-    Hive.registerAdapter(BusinessAdapter());
-    Hive.registerAdapter(CustomerAdapter());
-    Hive.registerAdapter(TransactionTypeAdapter());
-    Hive.registerAdapter(BusinessTransactionAdapter());
-    Hive.registerAdapter(TripPlanAdapter());
-    Hive.registerAdapter(InvestmentAdapter());
-    
-    // Open boxes
-    _userBox = await Hive.openBox<User>(AppConstants.userBox);
-    _expenseBox = await Hive.openBox<Expense>(AppConstants.expenseBox);
-    _categoryBox = await Hive.openBox<Category>(AppConstants.categoryBox);
-    _salaryBox = await Hive.openBox<SalaryPlan>(AppConstants.salaryBox);
-    _emiBox = await Hive.openBox<EMI>(AppConstants.emiBox);
-    _businessBox = await Hive.openBox<Business>(AppConstants.businessBox);
-    _customerBox = await Hive.openBox<Customer>(AppConstants.customerBox);
-    _transactionBox = await Hive.openBox<BusinessTransaction>(AppConstants.transactionBox);
-    _tripBox = await Hive.openBox<TripPlan>(AppConstants.tripBox);
-    _investmentBox = await Hive.openBox<Investment>(AppConstants.investmentBox);
-    _settingsBox = await Hive.openBox(AppConstants.settingsBox);
-    
+    _db = await Db.create(AppConstants.mongoUrl);
+    await _db.open();
+
     // Initialize default categories if empty
-    if (_categoryBox.isEmpty) {
+    final catCol = _db.collection(AppConstants.categoryCollection);
+    final count = await catCol.count();
+    if (count == 0) {
       await _initializeDefaultCategories();
     }
   }
-  
+
   static Future<void> _initializeDefaultCategories() async {
+    final col = _db.collection(AppConstants.categoryCollection);
     for (int i = 0; i < AppConstants.defaultCategories.length; i++) {
       final cat = AppConstants.defaultCategories[i];
       final category = Category(
@@ -68,250 +37,306 @@ class DatabaseService {
         isCustom: false,
         isIncome: ['Salary', 'Freelance', 'Investment', 'Gift'].contains(cat['name']),
       );
-      await _categoryBox.put(category.id, category);
+      await col.updateOne(
+        where.eq('id', category.id),
+        {'\$set': category.toJson()},
+        upsert: true,
+      );
     }
   }
-  
+
   // User operations
-  static Box<User> get userBox => _userBox;
-  
   static Future<void> saveUser(User user) async {
-    await _userBox.put(user.id, user);
+    final col = _db.collection(AppConstants.userCollection);
+    await col.updateOne(
+      where.eq('id', user.id),
+      {'\$set': user.toJson()},
+      upsert: true,
+    );
   }
-  
-  static User? getUser(String id) {
-    return _userBox.get(id);
+
+  static Future<User?> getUser(String id) async {
+    final col = _db.collection(AppConstants.userCollection);
+    final doc = await col.findOne(where.eq('id', id));
+    if (doc == null) return null;
+    return User.fromJson(doc);
   }
-  
-  static User? getCurrentUser() {
-    return getLoggedInUser();
+
+  static Future<User?> getCurrentUser() async {
+    return await getLoggedInUser();
   }
-  
-  static User? getLoggedInUser() {
-    final currentUserId = _settingsBox.get('currentUserId');
+
+  static Future<User?> getLoggedInUser() async {
+    final currentUserId = await getSetting('currentUserId');
     if (currentUserId == null) return null;
-    return _userBox.get(currentUserId);
+    return await getUser(currentUserId);
   }
-  
+
   static Future<void> deleteUser(String id) async {
-    await _userBox.delete(id);
+    final col = _db.collection(AppConstants.userCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Expense operations
-  static Box<Expense> get expenseBox => _expenseBox;
-  
   static Future<void> saveExpense(Expense expense) async {
-    await _expenseBox.put(expense.id, expense);
+    final col = _db.collection(AppConstants.expenseCollection);
+    await col.updateOne(
+      where.eq('id', expense.id),
+      {'\$set': expense.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<Expense> getExpenses(String userId) {
-    return _expenseBox.values
-        .where((e) => e.userId == userId)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+
+  static Future<List<Expense>> getExpenses(String userId) async {
+    final col = _db.collection(AppConstants.expenseCollection);
+    final docs = await col.find(where.eq('userId', userId).sortBy('date', descending: true)).toList();
+    return docs.map((doc) => Expense.fromJson(doc)).toList();
   }
-  
-  static List<Expense> getExpensesByDateRange(String userId, DateTime start, DateTime end) {
-    return _expenseBox.values
-        .where((e) => 
-            e.userId == userId &&
-            e.date.isAfter(start.subtract(const Duration(days: 1))) &&
-            e.date.isBefore(end.add(const Duration(days: 1))))
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+
+  static Future<List<Expense>> getExpensesByDateRange(String userId, DateTime start, DateTime end) async {
+    final col = _db.collection(AppConstants.expenseCollection);
+    final docs = await col.find(
+      where.eq('userId', userId)
+        .gte('date', start.subtract(const Duration(days: 1)).toIso8601String())
+        .lte('date', end.add(const Duration(days: 1)).toIso8601String())
+        .sortBy('date', descending: true),
+    ).toList();
+    return docs.map((doc) => Expense.fromJson(doc)).toList();
   }
-  
-  static List<Expense> getExpensesByMonth(String userId, int year, int month) {
-    return _expenseBox.values
-        .where((e) => 
-            e.userId == userId &&
-            e.date.year == year &&
-            e.date.month == month)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+
+  static Future<List<Expense>> getExpensesByMonth(String userId, int year, int month) async {
+    final start = DateTime(year, month, 1);
+    final end = DateTime(year, month + 1, 0, 23, 59, 59);
+    return await getExpensesByDateRange(userId, start, end);
   }
-  
+
   static Future<void> deleteExpense(String id) async {
-    await _expenseBox.delete(id);
+    final col = _db.collection(AppConstants.expenseCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Category operations
-  static Box<Category> get categoryBox => _categoryBox;
-  
-  static List<Category> getCategories({bool? isIncome}) {
-    if (isIncome == null) {
-      return _categoryBox.values.toList();
+  static Future<List<Category>> getCategories({bool? isIncome}) async {
+    final col = _db.collection(AppConstants.categoryCollection);
+    SelectorBuilder query;
+    if (isIncome != null) {
+      query = where.eq('isIncome', isIncome);
+    } else {
+      query = where;
     }
-    return _categoryBox.values.where((c) => c.isIncome == isIncome).toList();
+    final docs = await col.find(query).toList();
+    return docs.map((doc) => Category.fromJson(doc)).toList();
   }
-  
+
   static Future<void> saveCategory(Category category) async {
-    await _categoryBox.put(category.id, category);
+    final col = _db.collection(AppConstants.categoryCollection);
+    await col.updateOne(
+      where.eq('id', category.id),
+      {'\$set': category.toJson()},
+      upsert: true,
+    );
   }
-  
+
   static Future<void> deleteCategory(String id) async {
-    await _categoryBox.delete(id);
+    final col = _db.collection(AppConstants.categoryCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Salary Plan operations
-  static Box<SalaryPlan> get salaryBox => _salaryBox;
-  
   static Future<void> saveSalaryPlan(SalaryPlan plan) async {
-    await _salaryBox.put(plan.id, plan);
+    final col = _db.collection(AppConstants.salaryCollection);
+    await col.updateOne(
+      where.eq('id', plan.id),
+      {'\$set': plan.toJson()},
+      upsert: true,
+    );
   }
-  
-  static SalaryPlan? getSalaryPlan(String userId) {
-    try {
-      return _salaryBox.values.firstWhere((p) => p.userId == userId);
-    } catch (_) {
-      return null;
-    }
+
+  static Future<SalaryPlan?> getSalaryPlan(String userId) async {
+    final col = _db.collection(AppConstants.salaryCollection);
+    final doc = await col.findOne(where.eq('userId', userId));
+    if (doc == null) return null;
+    return SalaryPlan.fromJson(doc);
   }
-  
+
   static Future<void> deleteSalaryPlan(String id) async {
-    await _salaryBox.delete(id);
+    final col = _db.collection(AppConstants.salaryCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // EMI operations
-  static Box<EMI> get emiBox => _emiBox;
-  
   static Future<void> saveEMI(EMI emi) async {
-    await _emiBox.put(emi.id, emi);
+    final col = _db.collection(AppConstants.emiCollection);
+    await col.updateOne(
+      where.eq('id', emi.id),
+      {'\$set': emi.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<EMI> getEMIs(String userId) {
-    return _emiBox.values
-        .where((e) => e.userId == userId)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  static Future<List<EMI>> getEMIs(String userId) async {
+    final col = _db.collection(AppConstants.emiCollection);
+    final docs = await col.find(where.eq('userId', userId).sortBy('createdAt', descending: true)).toList();
+    return docs.map((doc) => EMI.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteEMI(String id) async {
-    await _emiBox.delete(id);
+    final col = _db.collection(AppConstants.emiCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Business operations
-  static Box<Business> get businessBox => _businessBox;
-  
   static Future<void> saveBusiness(Business business) async {
-    await _businessBox.put(business.id, business);
+    final col = _db.collection(AppConstants.businessCollection);
+    await col.updateOne(
+      where.eq('id', business.id),
+      {'\$set': business.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<Business> getBusinesses(String userId) {
-    return _businessBox.values
-        .where((b) => b.userId == userId)
-        .toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  static Future<List<Business>> getBusinesses(String userId) async {
+    final col = _db.collection(AppConstants.businessCollection);
+    final docs = await col.find(where.eq('userId', userId).sortBy('createdAt', descending: true)).toList();
+    return docs.map((doc) => Business.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteBusiness(String id) async {
-    await _businessBox.delete(id);
+    final col = _db.collection(AppConstants.businessCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Customer operations
-  static Box<Customer> get customerBox => _customerBox;
-  
   static Future<void> saveCustomer(Customer customer) async {
-    await _customerBox.put(customer.id, customer);
+    final col = _db.collection(AppConstants.customerCollection);
+    await col.updateOne(
+      where.eq('id', customer.id),
+      {'\$set': customer.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<Customer> getCustomers(String businessId) {
-    return _customerBox.values
-        .where((c) => c.businessId == businessId)
-        .toList();
+
+  static Future<List<Customer>> getCustomers(String businessId) async {
+    final col = _db.collection(AppConstants.customerCollection);
+    final docs = await col.find(where.eq('businessId', businessId)).toList();
+    return docs.map((doc) => Customer.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteCustomer(String id) async {
-    await _customerBox.delete(id);
+    final col = _db.collection(AppConstants.customerCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Business Transaction operations
-  static Box<BusinessTransaction> get transactionBox => _transactionBox;
-  
   static Future<void> saveTransaction(BusinessTransaction transaction) async {
-    await _transactionBox.put(transaction.id, transaction);
+    final col = _db.collection(AppConstants.transactionCollection);
+    await col.updateOne(
+      where.eq('id', transaction.id),
+      {'\$set': transaction.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<BusinessTransaction> getTransactions(String businessId) {
-    return _transactionBox.values
-        .where((t) => t.businessId == businessId)
-        .toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+
+  static Future<List<BusinessTransaction>> getTransactions(String businessId) async {
+    final col = _db.collection(AppConstants.transactionCollection);
+    final docs = await col.find(where.eq('businessId', businessId).sortBy('date', descending: true)).toList();
+    return docs.map((doc) => BusinessTransaction.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteTransaction(String id) async {
-    await _transactionBox.delete(id);
+    final col = _db.collection(AppConstants.transactionCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Trip Plan operations
-  static Box<TripPlan> get tripBox => _tripBox;
-  
   static Future<void> saveTripPlan(TripPlan trip) async {
-    await _tripBox.put(trip.id, trip);
+    final col = _db.collection(AppConstants.tripCollection);
+    await col.updateOne(
+      where.eq('id', trip.id),
+      {'\$set': trip.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<TripPlan> getTripPlans(String userId) {
-    return _tripBox.values
-        .where((t) => t.userId == userId)
-        .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  static Future<List<TripPlan>> getTripPlans(String userId) async {
+    final col = _db.collection(AppConstants.tripCollection);
+    final docs = await col.find(where.eq('userId', userId).sortBy('createdAt', descending: true)).toList();
+    return docs.map((doc) => TripPlan.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteTripPlan(String id) async {
-    await _tripBox.delete(id);
+    final col = _db.collection(AppConstants.tripCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Investment operations
-  static Box<Investment> get investmentBox => _investmentBox;
-  
   static Future<void> saveInvestment(Investment investment) async {
-    await _investmentBox.put(investment.id, investment);
+    final col = _db.collection(AppConstants.investmentCollection);
+    await col.updateOne(
+      where.eq('id', investment.id),
+      {'\$set': investment.toJson()},
+      upsert: true,
+    );
   }
-  
-  static List<Investment> getInvestments(String userId) {
-    return _investmentBox.values
-        .where((i) => i.userId == userId)
-        .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+  static Future<List<Investment>> getInvestments(String userId) async {
+    final col = _db.collection(AppConstants.investmentCollection);
+    final docs = await col.find(where.eq('userId', userId).sortBy('createdAt', descending: true)).toList();
+    return docs.map((doc) => Investment.fromJson(doc)).toList();
   }
-  
+
   static Future<void> deleteInvestment(String id) async {
-    await _investmentBox.delete(id);
+    final col = _db.collection(AppConstants.investmentCollection);
+    await col.deleteOne(where.eq('id', id));
   }
-  
+
   // Settings operations
-  static Box get settingsBox => _settingsBox;
-  
-  static dynamic getSetting(String key, {dynamic defaultValue}) {
-    return _settingsBox.get(key, defaultValue: defaultValue);
+  static Future<dynamic> getSetting(String key, {dynamic defaultValue}) async {
+    final col = _db.collection(AppConstants.settingsCollection);
+    final doc = await col.findOne(where.eq('key', key));
+    if (doc == null) return defaultValue;
+    return doc['value'] ?? defaultValue;
   }
-  
+
   static Future<void> saveSetting(String key, dynamic value) async {
-    await _settingsBox.put(key, value);
+    final col = _db.collection(AppConstants.settingsCollection);
+    await col.updateOne(
+      where.eq('key', key),
+      {'\$set': {'key': key, 'value': value}},
+      upsert: true,
+    );
   }
-  
+
+  // Find user by email (for login)
+  static Future<User?> findUserByEmail(String email) async {
+    final col = _db.collection(AppConstants.userCollection);
+    final doc = await col.findOne(where.eq('email', email));
+    if (doc == null) return null;
+    return User.fromJson(doc);
+  }
+
   // Clear all data
   static Future<void> clearAllData() async {
-    await _userBox.clear();
-    await _expenseBox.clear();
-    await _salaryBox.clear();
-    await _emiBox.clear();
-    await _businessBox.clear();
-    await _customerBox.clear();
-    await _transactionBox.clear();
-    await _tripBox.clear();
-    await _investmentBox.clear();
+    await _db.collection(AppConstants.userCollection).drop();
+    await _db.collection(AppConstants.expenseCollection).drop();
+    await _db.collection(AppConstants.salaryCollection).drop();
+    await _db.collection(AppConstants.emiCollection).drop();
+    await _db.collection(AppConstants.businessCollection).drop();
+    await _db.collection(AppConstants.customerCollection).drop();
+    await _db.collection(AppConstants.transactionCollection).drop();
+    await _db.collection(AppConstants.tripCollection).drop();
+    await _db.collection(AppConstants.investmentCollection).drop();
   }
-  
+
   // Backup data to JSON
-  static Map<String, dynamic> exportData(String userId) {
+  static Future<Map<String, dynamic>> exportData(String userId) async {
     return {
-      'user': getCurrentUser()?.toJson(),
-      'expenses': getExpenses(userId).map((e) => e.toJson()).toList(),
-      'categories': getCategories().where((c) => c.isCustom).map((c) => c.toJson()).toList(),
-      'salaryPlan': getSalaryPlan(userId)?.toJson(),
-      'emis': getEMIs(userId).map((e) => e.toJson()).toList(),
-      'businesses': getBusinesses(userId).map((b) => b.toJson()).toList(),
+      'user': (await getCurrentUser())?.toJson(),
+      'expenses': (await getExpenses(userId)).map((e) => e.toJson()).toList(),
+      'categories': (await getCategories()).where((c) => c.isCustom).map((c) => c.toJson()).toList(),
+      'salaryPlan': (await getSalaryPlan(userId))?.toJson(),
+      'emis': (await getEMIs(userId)).map((e) => e.toJson()).toList(),
+      'businesses': (await getBusinesses(userId)).map((b) => b.toJson()).toList(),
       'exportedAt': DateTime.now().toIso8601String(),
     };
   }

@@ -12,11 +12,11 @@ class EMIProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   double get totalMonthlyEMI => _emis.fold(0, (sum, e) => sum + e.monthlyEMI);
   
-  void loadEMIs(String userId) {
+  Future<void> loadEMIs(String userId) async {
     _isLoading = true;
     notifyListeners();
     
-    _emis = EMIService.getEMIs(userId);
+    _emis = await EMIService.getEMIs(userId);
     
     _isLoading = false;
     notifyListeners();
@@ -55,12 +55,12 @@ class EMIProvider extends ChangeNotifier {
       reminderDaysBefore: reminderDaysBefore,
       isReminderEnabled: isReminderEnabled,
     );
-    loadEMIs(userId);
+    await loadEMIs(userId);
   }
   
   Future<void> deleteEMI(String id, String userId) async {
     await EMIService.deleteEMI(id);
-    loadEMIs(userId);
+    await loadEMIs(userId);
   }
   
   void clearPreview() {

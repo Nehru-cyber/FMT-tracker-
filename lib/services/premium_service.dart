@@ -4,12 +4,12 @@ class PremiumService {
   static const String _premiumKey = 'is_premium';
   static const String _premiumExpiryKey = 'premium_expiry';
   
-  static bool isPremium() {
-    return DatabaseService.getSetting(_premiumKey, defaultValue: false) == true;
+  static Future<bool> isPremium() async {
+    return await DatabaseService.getSetting(_premiumKey, defaultValue: false) == true;
   }
   
-  static DateTime? getPremiumExpiry() {
-    final expiry = DatabaseService.getSetting(_premiumExpiryKey);
+  static Future<DateTime?> getPremiumExpiry() async {
+    final expiry = await DatabaseService.getSetting(_premiumExpiryKey);
     if (expiry == null) return null;
     return DateTime.parse(expiry);
   }
@@ -23,10 +23,10 @@ class PremiumService {
     await DatabaseService.saveSetting(_premiumKey, true);
     await DatabaseService.saveSetting(_premiumExpiryKey, expiry.toIso8601String());
     
-    final user = DatabaseService.getCurrentUser();
+    final user = await DatabaseService.getCurrentUser();
     if (user != null) {
-      user.isPremium = true;
-      await DatabaseService.saveUser(user);
+      final updatedUser = user.copyWith(isPremium: true);
+      await DatabaseService.saveUser(updatedUser);
     }
   }
   
@@ -34,16 +34,16 @@ class PremiumService {
     await DatabaseService.saveSetting(_premiumKey, false);
     await DatabaseService.saveSetting(_premiumExpiryKey, null);
     
-    final user = DatabaseService.getCurrentUser();
+    final user = await DatabaseService.getCurrentUser();
     if (user != null) {
-      user.isPremium = false;
-      await DatabaseService.saveUser(user);
+      final updatedUser = user.copyWith(isPremium: false);
+      await DatabaseService.saveUser(updatedUser);
     }
   }
   
-  static bool canAccessFeature(String feature) {
+  static Future<bool> canAccessFeature(String feature) async {
     const premiumFeatures = ['export', 'business', 'analytics', 'backup', 'noAds'];
     if (!premiumFeatures.contains(feature)) return true;
-    return isPremium();
+    return await isPremium();
   }
 }

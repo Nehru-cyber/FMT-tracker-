@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../config/theme.dart';
 
 class DietTrackerScreen extends StatefulWidget {
@@ -43,6 +44,7 @@ class _DietTrackerScreenState extends State<DietTrackerScreen> {
               TextField(
                 controller: caloriesCtrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   labelText: 'Calories (kcal)',
                   prefixIcon: Icon(Icons.local_fire_department),
@@ -76,6 +78,80 @@ class _DietTrackerScreenState extends State<DietTrackerScreen> {
                 },
                 icon: const Icon(Icons.check),
                 label: const Text('Save Meal'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _editMeal(int index) {
+    final m = _meals[index];
+    final nameCtrl = TextEditingController(text: m['name']);
+    final caloriesCtrl = TextEditingController(text: m['calories'].toString());
+    String selectedType = m['type'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Edit Meal', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Meal / Food Name',
+                  prefixIcon: Icon(Icons.restaurant_menu),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: caloriesCtrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Calories (kcal)',
+                  prefixIcon: Icon(Icons.local_fire_department),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Meal Type',
+                  prefixIcon: Icon(Icons.category),
+                ),
+                items: _mealTypes.map((type) {
+                  return DropdownMenuItem(value: type, child: Text(type));
+                }).toList(),
+                onChanged: (v) => setSheetState(() => selectedType = v!),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (nameCtrl.text.trim().isEmpty) return;
+                  setState(() {
+                    _meals[index] = {
+                      'name': nameCtrl.text.trim(),
+                      'calories': int.tryParse(caloriesCtrl.text) ?? 0,
+                      'type': selectedType,
+                      'date': m['date'],
+                    };
+                  });
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.check),
+                label: const Text('Update Meal'),
               ),
             ],
           ),
@@ -239,9 +315,18 @@ class _DietTrackerScreenState extends State<DietTrackerScreen> {
                         ),
                         title: Text(m['name'], style: const TextStyle(fontWeight: FontWeight.w600)),
                         subtitle: Text('${m['type']} • ${m['calories']} kcal'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
-                          onPressed: () => setState(() => _meals.removeAt(index)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined, color: color, size: 20),
+                              onPressed: () => _editMeal(index),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
+                              onPressed: () => setState(() => _meals.removeAt(index)),
+                            ),
+                          ],
                         ),
                       ),
                     );

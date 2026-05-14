@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
+import '../../config/routes.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -166,13 +167,30 @@ class ExpenseListScreen extends StatelessWidget {
               if (expense.note.isNotEmpty) Text(expense.note, style: const TextStyle(fontSize: 12)),
             ],
           ),
-          trailing: Text(
-            '${isIncome ? '+' : '-'}$currency${expense.amount.toStringAsFixed(0)}',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
-            ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${isIncome ? '+' : '-'}$currency${expense.amount.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
+                ),
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.edit_outlined, size: 20),
+                color: AppTheme.primaryColor,
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    AppRoutes.addExpense,
+                    arguments: {'expense': expense},
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

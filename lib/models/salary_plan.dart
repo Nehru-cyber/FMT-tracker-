@@ -126,10 +126,35 @@ class SalaryPlan extends HiveObject {
       'id': id,
       'userId': userId,
       'monthlySalary': monthlySalary,
+      'fixedExpensesData': fixedExpensesData,
       'fixedExpenses': fixedExpenses.map((e) => e.toJson()).toList(),
       'savingsGoal': savingsGoal,
       'isPercentage': isPercentage,
       'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'incomeDay': incomeDay,
+      'incomeReminderEnabled': incomeReminderEnabled,
     };
+  }
+
+  factory SalaryPlan.fromJson(Map<String, dynamic> json) {
+    String expensesData = '[]';
+    if (json['fixedExpensesData'] != null) {
+      expensesData = json['fixedExpensesData'];
+    } else if (json['fixedExpenses'] != null) {
+      expensesData = jsonEncode(json['fixedExpenses']);
+    }
+    return SalaryPlan(
+      id: json['id'],
+      userId: json['userId'],
+      monthlySalary: (json['monthlySalary'] as num).toDouble(),
+      fixedExpensesData: expensesData,
+      savingsGoal: (json['savingsGoal'] as num).toDouble(),
+      isPercentage: json['isPercentage'] ?? true,
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
+      incomeDay: json['incomeDay'] ?? 1,
+      incomeReminderEnabled: json['incomeReminderEnabled'] ?? true,
+    );
   }
 }

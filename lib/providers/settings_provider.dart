@@ -14,9 +14,9 @@ class SettingsProvider extends ChangeNotifier {
     _loadSettings();
   }
   
-  void _loadSettings() {
-    _currency = DatabaseService.getSetting('currency', defaultValue: 'INR');
-    _notificationsEnabled = DatabaseService.getSetting('notifications', defaultValue: true);
+  Future<void> _loadSettings() async {
+    _currency = await DatabaseService.getSetting('currency', defaultValue: 'INR');
+    _notificationsEnabled = await DatabaseService.getSetting('notifications', defaultValue: true);
     notifyListeners();
   }
   

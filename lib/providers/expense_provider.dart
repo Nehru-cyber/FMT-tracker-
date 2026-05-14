@@ -28,11 +28,11 @@ class ExpenseProvider extends ChangeNotifier {
     return _expenses.where((e) => e.category == _selectedCategory).toList();
   }
   
-  void loadExpenses(String userId) {
+  Future<void> loadExpenses(String userId) async {
     _isLoading = true;
     notifyListeners();
     
-    _expenses = ExpenseService.getExpensesByMonth(
+    _expenses = await ExpenseService.getExpensesByMonth(
       userId,
       _selectedMonth.year,
       _selectedMonth.month,
@@ -58,12 +58,33 @@ class ExpenseProvider extends ChangeNotifier {
       type: type,
       note: note,
     );
-    loadExpenses(userId);
+    await loadExpenses(userId);
   }
   
+  Future<void> updateExpense({
+    required String userId,
+    required String id,
+    required double amount,
+    required String category,
+    required DateTime date,
+    required ExpenseType type,
+    String note = '',
+  }) async {
+    await ExpenseService.updateExpense(
+      id: id,
+      userId: userId,
+      amount: amount,
+      category: category,
+      date: date,
+      type: type,
+      note: note,
+    );
+    await loadExpenses(userId);
+  }
+
   Future<void> deleteExpense(String id, String userId) async {
     await ExpenseService.deleteExpense(id);
-    loadExpenses(userId);
+    await loadExpenses(userId);
   }
   
   void setSelectedCategory(String? category) {
@@ -71,9 +92,9 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
   }
   
-  void setSelectedMonth(DateTime month, String userId) {
+  Future<void> setSelectedMonth(DateTime month, String userId) async {
     _selectedMonth = month;
-    loadExpenses(userId);
+    await loadExpenses(userId);
   }
   
   Map<String, double> getCategoryBreakdown({ExpenseType? type}) {

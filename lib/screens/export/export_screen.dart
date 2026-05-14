@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../providers/expense_provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/settings_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/export_service.dart';
 import '../../services/premium_service.dart';
 
@@ -36,7 +36,8 @@ class _ExportScreenState extends State<ExportScreen> {
   }
 
   Future<void> _exportPDF() async {
-    if (!PremiumService.canAccessFeature('export')) {
+    final canAccess = await PremiumService.canAccessFeature('export');
+    if (!canAccess) {
       _showPremiumDialog();
       return;
     }
@@ -92,7 +93,7 @@ class _ExportScreenState extends State<ExportScreen> {
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     final expense = context.watch<ExpenseProvider>();
-    final isPremium = PremiumService.isPremium();
+    final isPremium = context.watch<AuthProvider>().isPremium;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Export Reports')),

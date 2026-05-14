@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
@@ -118,6 +119,7 @@ class _EMICalculatorScreenState extends State<EMICalculatorScreen> {
             TextFormField(
               controller: _amountController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               decoration: InputDecoration(
                 labelText: 'Loan Amount',
                 prefixIcon: const Icon(Icons.currency_rupee),
@@ -131,6 +133,7 @@ class _EMICalculatorScreenState extends State<EMICalculatorScreen> {
             TextFormField(
               controller: _rateController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               decoration: const InputDecoration(
                 labelText: 'Interest Rate (% per annum)',
                 prefixIcon: Icon(Icons.percent),
@@ -147,6 +150,7 @@ class _EMICalculatorScreenState extends State<EMICalculatorScreen> {
                   child: TextFormField(
                     controller: _tenureController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     decoration: const InputDecoration(
                       labelText: 'Tenure',
                       prefixIcon: Icon(Icons.calendar_month),
@@ -293,12 +297,42 @@ class _EMICalculatorScreenState extends State<EMICalculatorScreen> {
                 child: ListTile(
                   title: Text(e.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                   subtitle: Text('${currencyFormat.format(e.loanAmount)} @ ${e.interestRate}%'),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(currencyFormat.format(e.monthlyEMI), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      const Text('/month', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(currencyFormat.format(e.monthlyEMI), style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const Text('/month', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Delete EMI?'),
+                              content: const Text('Are you sure you want to delete this saved EMI?'),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(ctx);
+                                    final userId = context.read<AuthProvider>().user?.id;
+                                    if (userId != null) {
+                                      context.read<EMIProvider>().deleteEMI(e.id, userId);
+                                    }
+                                  },
+                                  child: const Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),

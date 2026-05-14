@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
+import '../../models/business.dart';
 import '../../models/business_transaction.dart';
 import '../../providers/business_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -94,71 +96,79 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
   }
 
   Widget _buildDashboard(BusinessProvider business, NumberFormat currencyFormat) {
-    final profitLoss = business.profitLoss;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // Business Selector
-        if (business.businesses.length > 1)
-          DropdownButton<String>(
-            value: business.selectedBusiness?.id,
-            isExpanded: true,
-            items: business.businesses.map((b) => DropdownMenuItem(
-              value: b.id,
-              child: Text(b.name),
-            )).toList(),
-            onChanged: (id) {
-              final selected = business.businesses.firstWhere((b) => b.id == id);
-              business.selectBusiness(selected);
-            },
-          ),
-        const SizedBox(height: 16),
-        // Summary Cards
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: profitLoss['profit']! >= 0 ? AppTheme.incomeGradient : AppTheme.expenseGradient,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              Text(
-                profitLoss['profit']! >= 0 ? 'Total Profit' : 'Total Loss',
-                style: const TextStyle(color: Colors.white70),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                currencyFormat.format(profitLoss['profit']!.abs()),
-                style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
+    return FutureBuilder<Map<String, double>>(
+      future: business.getProfitLoss(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final profitLoss = snapshot.data!;
+        return ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            Expanded(
-              child: _buildStatCard('Income', currencyFormat.format(profitLoss['income']), AppTheme.secondaryColor, Icons.arrow_downward),
+            // Business Selector
+            if (business.businesses.length > 1)
+              DropdownButton<String>(
+                value: business.selectedBusiness?.id,
+                isExpanded: true,
+                items: business.businesses.map((b) => DropdownMenuItem(
+                  value: b.id,
+                  child: Text(b.name),
+                )).toList(),
+                onChanged: (id) {
+                  final selected = business.businesses.firstWhere((b) => b.id == id);
+                  business.selectBusiness(selected);
+                },
+              ),
+            const SizedBox(height: 16),
+            // Summary Cards
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: profitLoss['profit']! >= 0 ? AppTheme.incomeGradient : AppTheme.expenseGradient,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    profitLoss['profit']! >= 0 ? 'Total Profit' : 'Total Loss',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    currencyFormat.format(profitLoss['profit']!.abs()),
+                    style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard('Expense', currencyFormat.format(profitLoss['expense']), AppTheme.errorColor, Icons.arrow_upward),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard('Income', currencyFormat.format(profitLoss['income']), AppTheme.secondaryColor, Icons.arrow_downward),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard('Expense', currencyFormat.format(profitLoss['expense']), AppTheme.errorColor, Icons.arrow_upward),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard('Transactions', business.transactions.length.toString(), AppTheme.primaryColor, Icons.receipt),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard('Customers', business.customers.length.toString(), AppTheme.accentColor, Icons.people),
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard('Transactions', business.transactions.length.toString(), AppTheme.primaryColor, Icons.receipt),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard('Customers', business.customers.length.toString(), AppTheme.accentColor, Icons.people),
-            ),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -216,12 +226,46 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
             ),
             title: Text(t.note.isNotEmpty ? t.note : (isIncome ? 'Income' : 'Expense')),
             subtitle: Text(DateFormat('dd MMM yyyy').format(t.date)),
-            trailing: Text(
-              '${isIncome ? '+' : '-'}${settings.currencySymbol}${t.amount.toStringAsFixed(0)}',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${isIncome ? '+' : '-'}${settings.currencySymbol}${t.amount.toStringAsFixed(0)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  color: AppTheme.primaryColor,
+                  onPressed: () => _showEditTransactionDialog(context, t),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: AppTheme.errorColor,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Transaction?'),
+                        content: const Text('Are you sure you want to delete this transaction?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              business.deleteTransaction(t.id);
+                            },
+                            child: const Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         );
@@ -258,6 +302,39 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
             leading: CircleAvatar(child: Text(c.name[0].toUpperCase())),
             title: Text(c.name),
             subtitle: Text(c.phone),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined, size: 20),
+                  color: AppTheme.primaryColor,
+                  onPressed: () => _showEditCustomerDialog(context, c),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, size: 20),
+                  color: AppTheme.errorColor,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Customer?'),
+                        content: const Text('Are you sure you want to delete this customer?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              business.deleteCustomer(c.id);
+                            },
+                            child: const Text('Delete', style: TextStyle(color: AppTheme.errorColor)),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -298,6 +375,7 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
   }
 
   void _showAddTransactionDialog(BuildContext context) {
+    final formKey = GlobalKey<FormState>();
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     TransactionType type = TransactionType.income;
@@ -307,35 +385,44 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           title: const Text('Add Transaction'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SegmentedButton<TransactionType>(
-                segments: const [
-                  ButtonSegment(value: TransactionType.income, label: Text('Income')),
-                  ButtonSegment(value: TransactionType.expense, label: Text('Expense')),
-                ],
-                selected: {type},
-                onSelectionChanged: (v) => setState(() => type = v.first),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Amount'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteController,
-                decoration: const InputDecoration(labelText: 'Note'),
-              ),
-            ],
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SegmentedButton<TransactionType>(
+                  segments: const [
+                    ButtonSegment(value: TransactionType.income, label: Text('Income')),
+                    ButtonSegment(value: TransactionType.expense, label: Text('Expense')),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (v) => setState(() => type = v.first),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Amount is required';
+                    if (double.tryParse(value) == null) return 'Enter a valid number';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: noteController,
+                  decoration: const InputDecoration(labelText: 'Note'),
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
-                if (amountController.text.isNotEmpty) {
+                if (formKey.currentState!.validate()) {
                   await context.read<BusinessProvider>().addTransaction(
                     amount: double.parse(amountController.text),
                     type: type,
@@ -382,6 +469,109 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
               }
             },
             child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditTransactionDialog(BuildContext context, BusinessTransaction transaction) {
+    final formKey = GlobalKey<FormState>();
+    final amountController = TextEditingController(text: transaction.amount.toString());
+    final noteController = TextEditingController(text: transaction.note);
+    TransactionType type = transaction.type;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Transaction'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SegmentedButton<TransactionType>(
+                  segments: const [
+                    ButtonSegment(value: TransactionType.income, label: Text('Income')),
+                    ButtonSegment(value: TransactionType.expense, label: Text('Expense')),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (v) => setState(() => type = v.first),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: amountController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
+                  decoration: const InputDecoration(labelText: 'Amount'),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Amount is required';
+                    if (double.tryParse(value) == null) return 'Enter a valid number';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: noteController,
+                  decoration: const InputDecoration(labelText: 'Note'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  await context.read<BusinessProvider>().updateTransaction(
+                    id: transaction.id,
+                    amount: double.parse(amountController.text),
+                    type: type,
+                    date: transaction.date,
+                    note: noteController.text,
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Update'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditCustomerDialog(BuildContext context, Customer c) {
+    final nameController = TextEditingController(text: c.name);
+    final phoneController = TextEditingController(text: c.phone);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Customer'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+            const SizedBox(height: 12),
+            TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone'), keyboardType: TextInputType.phone),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty && phoneController.text.isNotEmpty) {
+                await context.read<BusinessProvider>().updateCustomer(
+                  id: c.id,
+                  name: nameController.text,
+                  phone: phoneController.text,
+                );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Update'),
           ),
         ],
       ),

@@ -49,8 +49,8 @@ class SalaryService {
   }
   
   // Get salary plan
-  static SalaryPlan? getSalaryPlan(String userId) {
-    return DatabaseService.getSalaryPlan(userId);
+  static Future<SalaryPlan?> getSalaryPlan(String userId) async {
+    return await DatabaseService.getSalaryPlan(userId);
   }
   
   // Delete salary plan
@@ -59,27 +59,27 @@ class SalaryService {
   }
   
   // Calculate remaining balance for current month
-  static double calculateRemainingBalance(String userId) {
-    final plan = getSalaryPlan(userId);
+  static Future<double> calculateRemainingBalance(String userId) async {
+    final plan = await getSalaryPlan(userId);
     if (plan == null) return 0;
     return plan.remainingBalance;
   }
   
   // Calculate daily spending limit
-  static double calculateDailySpendingLimit(String userId) {
-    final plan = getSalaryPlan(userId);
+  static Future<double> calculateDailySpendingLimit(String userId) async {
+    final plan = await getSalaryPlan(userId);
     if (plan == null) return 0;
     return plan.dailySpendingLimit;
   }
   
   // Check if overspending
-  static bool isOverspending(String userId) {
-    return calculateRemainingBalance(userId) < 0;
+  static Future<bool> isOverspending(String userId) async {
+    return (await calculateRemainingBalance(userId)) < 0;
   }
   
   // Get spending analysis
-  static Map<String, dynamic> getSpendingAnalysis(String userId) {
-    final plan = getSalaryPlan(userId);
+  static Future<Map<String, dynamic>> getSpendingAnalysis(String userId) async {
+    final plan = await getSalaryPlan(userId);
     if (plan == null) {
       return {'hasPlan': false};
     }
@@ -96,8 +96,8 @@ class SalaryService {
   }
   
   // Get savings suggestion
-  static String getSavingsSuggestion(String userId) {
-    final plan = getSalaryPlan(userId);
+  static Future<String> getSavingsSuggestion(String userId) async {
+    final plan = await getSalaryPlan(userId);
     if (plan == null) {
       return 'Create a salary plan to start tracking your finances!';
     }

@@ -50,11 +50,9 @@ class AuthService {
     String phone = '',
   }) async {
     try {
-      final existingUsers = DatabaseService.userBox.values.where(
-        (u) => u.email.toLowerCase() == email.toLowerCase()
-      );
+      final existingUser = await DatabaseService.findUserByEmail(email.toLowerCase());
 
-      if (existingUsers.isNotEmpty) {
+      if (existingUser != null) {
         throw Exception('User with this email already exists');
       }
 
@@ -81,15 +79,11 @@ class AuthService {
     required String password,
   }) async {
     try {
-      final users = DatabaseService.userBox.values.where(
-        (u) => u.email.toLowerCase() == email.toLowerCase()
-      );
+      final user = await DatabaseService.findUserByEmail(email.toLowerCase());
 
-      if (users.isEmpty) {
+      if (user == null) {
         throw Exception('User not found');
       }
-
-      final user = users.first;
 
       if (user.password != _hashPassword(password)) {
         throw Exception('Invalid password');
@@ -120,7 +114,7 @@ class AuthService {
     final authenticated = await authenticateWithBiometrics();
     if (!authenticated) return false;
 
-    final user = DatabaseService.getLoggedInUser();
+    final user = await DatabaseService.getLoggedInUser();
     if (user == null) return false;
 
     final updatedUser = user.copyWith(biometricEnabled: true);
@@ -130,7 +124,7 @@ class AuthService {
 
   // Disable biometric lock
   static Future<bool> disableBiometricLock() async {
-    final user = DatabaseService.getLoggedInUser();
+    final user = await DatabaseService.getLoggedInUser();
     if (user == null) return false;
 
     final updatedUser = user.copyWith(biometricEnabled: false);
@@ -146,17 +140,17 @@ class AuthService {
   }
 
   // Get saved credentials
-  static Map<String, String?> getSavedCredentials() {
-    final rememberMe = DatabaseService.getSetting('remember_me', defaultValue: false);
+  static Future<Map<String, String?>> getSavedCredentials() async {
+    final rememberMe = await DatabaseService.getSetting('remember_me', defaultValue: false);
     if (rememberMe != true) return {'email': null, 'password': null};
     return {
-      'email': DatabaseService.getSetting('saved_email'),
+      'email': await DatabaseService.getSetting('saved_email'),
     };
   }
 
   // Check if remember me is enabled
-  static bool isRememberMeEnabled() {
-    return DatabaseService.getSetting('remember_me', defaultValue: false) == true;
+  static Future<bool> isRememberMeEnabled() async {
+    return await DatabaseService.getSetting('remember_me', defaultValue: false) == true;
   }
 
   // Clear saved credentials
@@ -168,18 +162,14 @@ class AuthService {
 
   // Quick login with saved credentials (biometric verified)
   static Future<User?> quickLogin() async {
-    final savedEmail = DatabaseService.getSetting('saved_email');
-    final savedPasswordHash = DatabaseService.getSetting('saved_password');
+    final savedEmail = await DatabaseService.getSetting('saved_email');
+    final savedPasswordHash = await DatabaseService.getSetting('saved_password');
 
     if (savedEmail == null || savedPasswordHash == null) return null;
 
-    final users = DatabaseService.userBox.values.where(
-      (u) => u.email.toLowerCase() == savedEmail.toString().toLowerCase()
-    );
+    final user = await DatabaseService.findUserByEmail(savedEmail.toString().toLowerCase());
 
-    if (users.isEmpty) return null;
-
-    final user = users.first;
+    if (user == null) return null;
     if (user.password != savedPasswordHash) return null;
 
     await DatabaseService.saveSetting('currentUserId', user.id);
@@ -188,7 +178,7 @@ class AuthService {
 
   // Logout
   static Future<void> logout() async {
-    final user = DatabaseService.getLoggedInUser();
+    final user = await DatabaseService.getLoggedInUser();
     if (user != null && user.isGuest) {
       // Clear guest data completely
       await DatabaseService.clearAllData();
@@ -208,12 +198,12 @@ class AuthService {
   }
 
   // Check if user is logged in
-  static bool isLoggedIn() {
-    return DatabaseService.getLoggedInUser() != null;
+  static Future<bool> isLoggedIn() async {
+    return await DatabaseService.getLoggedInUser() != null;
   }
 
   // Get current user
-  static User? getCurrentUser() {
-    return DatabaseService.getLoggedInUser();
+  static Future<User?> getCurrentUser() async {
+    return await DatabaseService.getLoggedInUser();
   }
 }

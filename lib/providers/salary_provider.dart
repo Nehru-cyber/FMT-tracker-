@@ -12,12 +12,12 @@ class SalaryProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get hasPlan => _salaryPlan != null;
   
-  void loadSalaryPlan(String userId) {
+  Future<void> loadSalaryPlan(String userId) async {
     _isLoading = true;
     notifyListeners();
     
-    _salaryPlan = SalaryService.getSalaryPlan(userId);
-    _analysis = SalaryService.getSpendingAnalysis(userId);
+    _salaryPlan = await SalaryService.getSalaryPlan(userId);
+    _analysis = await SalaryService.getSpendingAnalysis(userId);
     
     _isLoading = false;
     notifyListeners();
@@ -46,7 +46,7 @@ class SalaryProvider extends ChangeNotifier {
       incomeReminderEnabled: incomeReminderEnabled,
     );
     
-    _analysis = SalaryService.getSpendingAnalysis(userId);
+    _analysis = await SalaryService.getSpendingAnalysis(userId);
     _isLoading = false;
     notifyListeners();
   }
@@ -54,7 +54,10 @@ class SalaryProvider extends ChangeNotifier {
   double get remainingBalance => _analysis['remaining'] ?? 0;
   double get dailyLimit => _analysis['dailyLimit'] ?? 0;
   bool get isOverspending => _analysis['isOverspending'] ?? false;
-  String get suggestion => SalaryService.getSavingsSuggestion(
-    _salaryPlan?.userId ?? '',
-  );
+  String get suggestion {
+    if (_salaryPlan == null) {
+      return 'Create a salary plan to start tracking your finances!';
+    }
+    return 'Great progress! Keep tracking your expenses.';
+  }
 }

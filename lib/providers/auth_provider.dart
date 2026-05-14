@@ -8,6 +8,7 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   bool _biometricAvailable = false;
+  bool _rememberMeEnabled = false;
   
   User? get user => _user;
   bool get isLoading => _isLoading;
@@ -17,7 +18,8 @@ class AuthProvider extends ChangeNotifier {
   bool get isPremium => _user?.isPremium ?? false;
   bool get biometricAvailable => _biometricAvailable;
   bool get biometricEnabled => _user?.biometricEnabled ?? false;
-  bool get rememberMeEnabled => AuthService.isRememberMeEnabled();
+  bool get rememberMeEnabled => _rememberMeEnabled;
+  bool get canQuickLogin => _biometricAvailable && _rememberMeEnabled;
   
   AuthProvider() {
     _loadUser();
@@ -25,12 +27,13 @@ class AuthProvider extends ChangeNotifier {
   }
   
   Future<void> _loadUser() async {
-    _user = DatabaseService.getLoggedInUser();
+    _user = await DatabaseService.getLoggedInUser();
     notifyListeners();
   }
 
   Future<void> _checkBiometric() async {
     _biometricAvailable = await AuthService.isBiometricAvailable();
+    _rememberMeEnabled = await AuthService.isRememberMeEnabled();
     notifyListeners();
   }
   
@@ -108,11 +111,7 @@ class AuthProvider extends ChangeNotifier {
     return _user != null;
   }
 
-  // Check if quick login is possible (has saved credentials + biometric)
-  bool get canQuickLogin {
-    return _biometricAvailable && AuthService.isRememberMeEnabled();
-  }
-  
+
   Future<void> logout() async {
     await AuthService.logout();
     _user = null;
@@ -122,7 +121,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> enableBiometric() async {
     final success = await AuthService.enableBiometricLock();
     if (success) {
-      _user = DatabaseService.getLoggedInUser();
+      _user = await DatabaseService.getLoggedInUser();
       notifyListeners();
     }
     return success;
@@ -131,7 +130,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> disableBiometric() async {
     final success = await AuthService.disableBiometricLock();
     if (success) {
-      _user = DatabaseService.getLoggedInUser();
+      _user = await DatabaseService.getLoggedInUser();
       notifyListeners();
     }
     return success;

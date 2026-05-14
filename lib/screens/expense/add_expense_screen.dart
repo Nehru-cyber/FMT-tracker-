@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../models/expense.dart';
 import '../../providers/expense_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/database_service.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   final Expense? expense;
@@ -72,14 +72,26 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     final userId = context.read<AuthProvider>().user?.id;
     if (userId == null) return;
 
-    await context.read<ExpenseProvider>().addExpense(
-      userId: userId,
-      amount: double.parse(_amountController.text),
-      category: _selectedCategory,
-      date: _selectedDate,
-      type: _type,
-      note: _noteController.text,
-    );
+    if (widget.expense != null) {
+      await context.read<ExpenseProvider>().updateExpense(
+        userId: userId,
+        id: widget.expense!.id,
+        amount: double.parse(_amountController.text),
+        category: _selectedCategory,
+        date: _selectedDate,
+        type: _type,
+        note: _noteController.text,
+      );
+    } else {
+      await context.read<ExpenseProvider>().addExpense(
+        userId: userId,
+        amount: double.parse(_amountController.text),
+        category: _selectedCategory,
+        date: _selectedDate,
+        type: _type,
+        note: _noteController.text,
+      );
+    }
 
     if (mounted) Navigator.pop(context);
   }
@@ -157,6 +169,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
             TextFormField(
               controller: _amountController,
               keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
               decoration: const InputDecoration(
                 labelText: 'Amount',

@@ -13,13 +13,13 @@ class InvestmentProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  void loadInvestments(String userId) {
+  Future<void> loadInvestments(String userId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _investments = DatabaseService.getInvestments(userId);
+      _investments = await DatabaseService.getInvestments(userId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -58,6 +58,46 @@ class InvestmentProvider extends ChangeNotifier {
         name: investment.name,
         amount: investment.amount,
         investDay: investment.investDay,
+      );
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateInvestment({
+    required String id,
+    required String userId,
+    required String name,
+    required double amount,
+    required int investDay,
+    required String type,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final existing = _investments.firstWhere((i) => i.id == id);
+      final updated = existing.copyWith(
+        name: name,
+        amount: amount,
+        investDay: investDay,
+        type: type,
+      );
+      await DatabaseService.saveInvestment(updated);
+      final idx = _investments.indexWhere((i) => i.id == id);
+      if (idx != -1) _investments[idx] = updated;
+
+      // Reschedule reminder
+      await NotificationService.cancelInvestmentReminder(id);
+      await NotificationService.scheduleInvestmentReminder(
+        id: updated.id,
+        name: updated.name,
+        amount: updated.amount,
+        investDay: updated.investDay,
       );
     } catch (e) {
       _error = e.toString();
