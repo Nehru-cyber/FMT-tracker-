@@ -12,16 +12,27 @@ import '../config/constants.dart';
 
 class DatabaseService {
   static late Db _db;
+  static bool _isInitialized = false;
+  
+  static bool get isInitialized => _isInitialized;
 
   static Future<void> initialize() async {
-    _db = await Db.create(AppConstants.mongoUrl);
-    await _db.open();
+    try {
+      _db = await Db.create(AppConstants.mongoUrl);
+      // Add a timeout so it doesn't hang indefinitely on unreachable IPs (like 10.0.2.2 on a physical device)
+      await _db.open().timeout(const Duration(seconds: 3));
 
-    // Initialize default categories if empty
-    final catCol = _db.collection(AppConstants.categoryCollection);
-    final count = await catCol.count();
-    if (count == 0) {
-      await _initializeDefaultCategories();
+      // Initialize default categories if empty
+      final catCol = _db.collection(AppConstants.categoryCollection);
+      final count = await catCol.count();
+      if (count == 0) {
+        await _initializeDefaultCategories();
+      }
+      _isInitialized = true;
+    } catch (e) {
+      debugPrint('DatabaseService.initialize error: $e');
+      _isInitialized = false;
+      rethrow;
     }
   }
 
@@ -56,10 +67,15 @@ class DatabaseService {
   }
 
   static Future<User?> getUser(String id) async {
-    final col = _db.collection(AppConstants.userCollection);
-    final doc = await col.findOne(where.eq('id', id));
-    if (doc == null) return null;
-    return User.fromJson(doc);
+    if (!_isInitialized) return null;
+    try {
+      final col = _db.collection(AppConstants.userCollection);
+      final doc = await col.findOne(where.eq('id', id));
+      if (doc == null) return null;
+      return User.fromJson(doc);
+    } catch (e) {
+      return null;
+    }
   }
 
   static Future<User?> getCurrentUser() async {
@@ -292,19 +308,29 @@ class DatabaseService {
 
   // Settings operations
   static Future<dynamic> getSetting(String key, {dynamic defaultValue}) async {
-    final col = _db.collection(AppConstants.settingsCollection);
-    final doc = await col.findOne(where.eq('key', key));
-    if (doc == null) return defaultValue;
-    return doc['value'] ?? defaultValue;
+    if (!_isInitialized) return defaultValue;
+    try {
+      final col = _db.collection(AppConstants.settingsCollection);
+      final doc = await col.findOne(where.eq('key', key));
+      if (doc == null) return defaultValue;
+      return doc['value'] ?? defaultValue;
+    } catch (e) {
+      return defaultValue;
+    }
   }
 
   static Future<void> saveSetting(String key, dynamic value) async {
-    final col = _db.collection(AppConstants.settingsCollection);
-    await col.updateOne(
-      where.eq('key', key),
-      {'\$set': {'key': key, 'value': value}},
-      upsert: true,
-    );
+    if (!_isInitialized) return;
+    try {
+      final col = _db.collection(AppConstants.settingsCollection);
+      await col.updateOne(
+        where.eq('key', key),
+        {'\$set': {'key': key, 'value': value}},
+        upsert: true,
+      );
+    } catch (e) {
+      debugPrint('Error saving setting: $e');
+    }
   }
 
   // Find user by email (for login)
