@@ -31,6 +31,7 @@ class SalaryService {
       isPercentage: isPercentage,
       incomeDay: incomeDay,
       incomeReminderEnabled: incomeReminderEnabled,
+      isEdited: existingId != null,
     );
     
     await DatabaseService.saveSalaryPlan(plan);

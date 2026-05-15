@@ -24,14 +24,15 @@ class TripPlanAdapter extends TypeAdapter<TripPlan> {
       dietPlan: fields[4] as String,
       friends: (fields[5] as List).cast<String>(),
       date: fields[6] as DateTime,
-      createdAt: fields[7] as DateTime,
+      createdAt: fields[7] as DateTime?,
+      isEdited: fields[8] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, TripPlan obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class TripPlanAdapter extends TypeAdapter<TripPlan> {
       ..writeByte(6)
       ..write(obj.date)
       ..writeByte(7)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(8)
+      ..write(obj.isEdited);
   }
 
   @override

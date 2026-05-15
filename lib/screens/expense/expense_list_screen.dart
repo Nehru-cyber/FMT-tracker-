@@ -159,11 +159,26 @@ class ExpenseListScreen extends StatelessWidget {
               color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
             ),
           ),
-          title: Text(expense.category, style: const TextStyle(fontWeight: FontWeight.w600)),
+          title: Row(
+            children: [
+              Text(expense.category, style: const TextStyle(fontWeight: FontWeight.w600)),
+              if (expense.mood != null) ...[
+                const SizedBox(width: 8),
+                Text(expense.mood!),
+              ],
+            ],
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(DateFormat('dd MMM yyyy').format(expense.date)),
+              Text(
+                DateFormat('dd MMM yyyy').format(expense.date) + 
+                (expense.isEdited ? ' (Edited)' : ''),
+                style: TextStyle(
+                  fontStyle: expense.isEdited ? FontStyle.italic : FontStyle.normal,
+                  color: expense.isEdited ? Colors.grey : null,
+                ),
+              ),
               if (expense.note.isNotEmpty) Text(expense.note, style: const TextStyle(fontSize: 12)),
             ],
           ),

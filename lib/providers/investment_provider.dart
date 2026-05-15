@@ -86,6 +86,7 @@ class InvestmentProvider extends ChangeNotifier {
         amount: amount,
         investDay: investDay,
         type: type,
+        isEdited: true,
       );
       await DatabaseService.saveInvestment(updated);
       final idx = _investments.indexWhere((i) => i.id == id);

@@ -9,6 +9,7 @@ import '../models/business.dart';
 import '../models/business_transaction.dart';
 import '../models/trip_plan.dart';
 import '../models/investment.dart';
+import '../models/wish.dart';
 import '../config/constants.dart';
 
 class DatabaseService {
@@ -22,6 +23,7 @@ class DatabaseService {
   static late Box _transactionBox;
   static late Box _tripBox;
   static late Box _investmentBox;
+  static late Box _wishBox;
   static late Box _settingsBox;
 
   static bool _isInitialized = false;
@@ -42,6 +44,7 @@ class DatabaseService {
       _transactionBox = await Hive.openBox(AppConstants.transactionCollection);
       _tripBox = await Hive.openBox(AppConstants.tripCollection);
       _investmentBox = await Hive.openBox(AppConstants.investmentCollection);
+      _wishBox = await Hive.openBox(AppConstants.wishCollection);
       _settingsBox = await Hive.openBox(AppConstants.settingsCollection);
 
       // Initialize default categories if empty
@@ -248,6 +251,21 @@ class DatabaseService {
 
   static Future<void> deleteInvestment(String id) async {
     await _investmentBox.delete(id);
+  }
+
+  // Wish operations
+  static Future<void> saveWish(Wish wish) async {
+    await _wishBox.put(wish.id, wish.toJson());
+  }
+
+  static Future<List<Wish>> getWishes(String userId) async {
+    final docs = _wishBox.values.where((doc) => doc['userId'] == userId).toList();
+    docs.sort((a, b) => b['createdAt'].compareTo(a['createdAt']));
+    return docs.map((doc) => Wish.fromJson(Map<String, dynamic>.from(doc))).toList();
+  }
+
+  static Future<void> deleteWish(String id) async {
+    await _wishBox.delete(id);
   }
 
   // Settings operations

@@ -62,6 +62,9 @@ class EMI extends HiveObject {
   @HiveField(13)
   bool isReminderEnabled;
   
+  @HiveField(14)
+  bool isEdited;
+  
   EMI({
     required this.id,
     required this.userId,
@@ -77,6 +80,7 @@ class EMI extends HiveObject {
     this.paymentDay = 5,
     this.reminderDaysBefore = 2,
     this.isReminderEnabled = true,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
   
   List<AmortizationEntry> get schedule {
@@ -182,6 +186,7 @@ class EMI extends HiveObject {
       'paymentDay': paymentDay,
       'reminderDaysBefore': reminderDaysBefore,
       'isReminderEnabled': isReminderEnabled,
+      'isEdited': isEdited,
     };
   }
 
@@ -201,6 +206,7 @@ class EMI extends HiveObject {
       paymentDay: json['paymentDay'] ?? 5,
       reminderDaysBefore: json['reminderDaysBefore'] ?? 2,
       isReminderEnabled: json['isReminderEnabled'] ?? true,
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

@@ -13,6 +13,7 @@ class ExpenseService {
     required DateTime date,
     required ExpenseType type,
     String note = '',
+    String? mood,
   }) async {
     final expense = Expense(
       id: _uuid.v4(),
@@ -22,6 +23,7 @@ class ExpenseService {
       date: date,
       type: type,
       note: note,
+      mood: mood,
     );
     
     await DatabaseService.saveExpense(expense);
@@ -37,6 +39,7 @@ class ExpenseService {
     DateTime? date,
     ExpenseType? type,
     String? note,
+    String? mood,
   }) async {
     final expenses = await DatabaseService.getExpenses(userId);
     final expense = expenses.where((e) => e.id == id).firstOrNull;
@@ -48,6 +51,8 @@ class ExpenseService {
       date: date,
       type: type,
       note: note,
+      mood: mood,
+      isEdited: true,
     );
     
     await DatabaseService.saveExpense(updated);

@@ -49,6 +49,7 @@ class ExpenseProvider extends ChangeNotifier {
     required DateTime date,
     required ExpenseType type,
     String note = '',
+    String? mood,
   }) async {
     await ExpenseService.addExpense(
       userId: userId,
@@ -57,6 +58,7 @@ class ExpenseProvider extends ChangeNotifier {
       date: date,
       type: type,
       note: note,
+      mood: mood,
     );
     await loadExpenses(userId);
   }
@@ -69,6 +71,7 @@ class ExpenseProvider extends ChangeNotifier {
     required DateTime date,
     required ExpenseType type,
     String note = '',
+    String? mood,
   }) async {
     await ExpenseService.updateExpense(
       id: id,
@@ -78,6 +81,7 @@ class ExpenseProvider extends ChangeNotifier {
       date: date,
       type: type,
       note: note,
+      mood: mood,
     );
     await loadExpenses(userId);
   }

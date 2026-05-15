@@ -26,18 +26,19 @@ class EMIAdapter extends TypeAdapter<EMI> {
       monthlyEMI: fields[6] as double,
       totalInterest: fields[7] as double,
       totalPayable: fields[8] as double,
-      createdAt: fields[9] as DateTime,
+      createdAt: fields[9] as DateTime?,
       startDate: fields[10] as DateTime?,
-      paymentDay: fields[11] as int? ?? 5,
-      reminderDaysBefore: fields[12] as int? ?? 2,
-      isReminderEnabled: fields[13] as bool? ?? true,
+      paymentDay: fields[11] as int,
+      reminderDaysBefore: fields[12] as int,
+      isReminderEnabled: fields[13] as bool,
+      isEdited: fields[14] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, EMI obj) {
     writer
-      ..writeByte(14)
+      ..writeByte(15)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -65,7 +66,9 @@ class EMIAdapter extends TypeAdapter<EMI> {
       ..writeByte(12)
       ..write(obj.reminderDaysBefore)
       ..writeByte(13)
-      ..write(obj.isReminderEnabled);
+      ..write(obj.isReminderEnabled)
+      ..writeByte(14)
+      ..write(obj.isEdited);
   }
 
   @override

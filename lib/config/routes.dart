@@ -21,6 +21,7 @@ import '../screens/investment/add_investment_screen.dart';
 import '../screens/gym/gym_tracker_screen.dart';
 import '../screens/diet/diet_tracker_screen.dart';
 import '../screens/clock/clock_screen.dart';
+import '../screens/wish/wishlist_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -45,6 +46,7 @@ class AppRoutes {
   static const String gymTracker = '/gym-tracker';
   static const String dietTracker = '/diet-tracker';
   static const String clock = '/clock';
+  static const String wishlist = '/wishlist';
   
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -95,6 +97,8 @@ class AppRoutes {
         return _buildRoute(const DietTrackerScreen(), settings);
       case clock:
         return _buildRoute(const ClockScreen(), settings);
+      case wishlist:
+        return _buildRoute(const WishlistScreen(), settings);
       default:
         return _buildRoute(
           Scaffold(

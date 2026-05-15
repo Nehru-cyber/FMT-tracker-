@@ -36,6 +36,12 @@ class Expense extends HiveObject {
   @HiveField(7)
   DateTime createdAt;
   
+  @HiveField(8)
+  bool isEdited;
+  
+  @HiveField(9)
+  String? mood;
+  
   Expense({
     required this.id,
     required this.userId,
@@ -45,6 +51,8 @@ class Expense extends HiveObject {
     required this.date,
     required this.type,
     DateTime? createdAt,
+    this.isEdited = false,
+    this.mood,
   }) : createdAt = createdAt ?? DateTime.now();
   
   Expense copyWith({
@@ -56,6 +64,8 @@ class Expense extends HiveObject {
     DateTime? date,
     ExpenseType? type,
     DateTime? createdAt,
+    bool? isEdited,
+    String? mood,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -66,6 +76,8 @@ class Expense extends HiveObject {
       date: date ?? this.date,
       type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
+      mood: mood ?? this.mood,
     );
   }
   
@@ -79,6 +91,8 @@ class Expense extends HiveObject {
       'date': date.toIso8601String(),
       'type': type.name,
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
+      'mood': mood,
     };
   }
   
@@ -92,6 +106,8 @@ class Expense extends HiveObject {
       date: DateTime.parse(json['date']),
       type: ExpenseType.values.firstWhere((e) => e.name == json['type']),
       createdAt: DateTime.parse(json['createdAt']),
+      isEdited: json['isEdited'] ?? false,
+      mood: json['mood'],
     );
   }
 }

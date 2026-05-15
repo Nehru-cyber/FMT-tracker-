@@ -13,6 +13,7 @@ import 'providers/trip_provider.dart';
 import 'providers/investment_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/wish_provider.dart';
 import 'services/database_service.dart';
 import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
@@ -64,6 +65,7 @@ class FMTTrackerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BusinessProvider()),
         ChangeNotifierProvider(create: (_) => TripProvider()),
         ChangeNotifierProvider(create: (_) => InvestmentProvider()),
+        ChangeNotifierProvider(create: (_) => WishProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

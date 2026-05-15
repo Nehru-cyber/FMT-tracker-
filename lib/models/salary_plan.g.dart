@@ -20,20 +20,21 @@ class SalaryPlanAdapter extends TypeAdapter<SalaryPlan> {
       id: fields[0] as String,
       userId: fields[1] as String,
       monthlySalary: fields[2] as double,
-      fixedExpensesData: fields[3] as String? ?? '[]',
+      fixedExpensesData: fields[3] as String,
       savingsGoal: fields[4] as double,
-      isPercentage: fields[5] as bool? ?? true,
+      isPercentage: fields[5] as bool,
       createdAt: fields[6] as DateTime?,
       updatedAt: fields[7] as DateTime?,
-      incomeDay: fields[8] as int? ?? 1,
-      incomeReminderEnabled: fields[9] as bool? ?? true,
+      incomeDay: fields[8] as int,
+      incomeReminderEnabled: fields[9] as bool,
+      isEdited: fields[10] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, SalaryPlan obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -53,7 +54,9 @@ class SalaryPlanAdapter extends TypeAdapter<SalaryPlan> {
       ..writeByte(8)
       ..write(obj.incomeDay)
       ..writeByte(9)
-      ..write(obj.incomeReminderEnabled);
+      ..write(obj.incomeReminderEnabled)
+      ..writeByte(10)
+      ..write(obj.isEdited);
   }
 
   @override

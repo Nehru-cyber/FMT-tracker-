@@ -22,8 +22,11 @@ class Investment extends HiveObject {
   @HiveField(5)
   String type; // 'SIP', 'Mutual Fund', 'Stocks', etc.
   
-  @HiveField(6)
+  @HiveField(7)
   DateTime createdAt;
+
+  @HiveField(8)
+  bool isEdited;
 
   Investment({
     required this.id,
@@ -33,6 +36,7 @@ class Investment extends HiveObject {
     required this.investDay,
     required this.type,
     DateTime? createdAt,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Investment copyWith({
@@ -43,6 +47,7 @@ class Investment extends HiveObject {
     int? investDay,
     String? type,
     DateTime? createdAt,
+    bool? isEdited,
   }) {
     return Investment(
       id: id ?? this.id,
@@ -52,6 +57,7 @@ class Investment extends HiveObject {
       investDay: investDay ?? this.investDay,
       type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -64,6 +70,7 @@ class Investment extends HiveObject {
       'investDay': investDay,
       'type': type,
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
     };
   }
 
@@ -76,6 +83,7 @@ class Investment extends HiveObject {
       investDay: json['investDay'] ?? 1,
       type: json['type'] ?? 'SIP',
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

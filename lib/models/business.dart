@@ -22,6 +22,9 @@ class Business extends HiveObject {
   @HiveField(5)
   DateTime createdAt;
   
+  @HiveField(6)
+  bool isEdited;
+  
   Business({
     required this.id,
     required this.userId,
@@ -29,6 +32,7 @@ class Business extends HiveObject {
     required this.type,
     this.description,
     DateTime? createdAt,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
   
   Business copyWith({
@@ -38,6 +42,7 @@ class Business extends HiveObject {
     String? type,
     String? description,
     DateTime? createdAt,
+    bool? isEdited,
   }) {
     return Business(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class Business extends HiveObject {
       type: type ?? this.type,
       description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
   
@@ -57,6 +63,7 @@ class Business extends HiveObject {
       'type': type,
       'description': description,
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
     };
   }
   
@@ -68,6 +75,7 @@ class Business extends HiveObject {
       type: json['type'],
       description: json['description'],
       createdAt: DateTime.parse(json['createdAt']),
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }
@@ -98,6 +106,9 @@ class Customer extends HiveObject {
   @HiveField(7)
   DateTime createdAt;
   
+  @HiveField(8)
+  bool isEdited;
+  
   Customer({
     required this.id,
     required this.businessId,
@@ -107,6 +118,7 @@ class Customer extends HiveObject {
     this.address,
     this.totalDue = 0,
     DateTime? createdAt,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
   
   Customer copyWith({
@@ -118,6 +130,7 @@ class Customer extends HiveObject {
     String? address,
     double? totalDue,
     DateTime? createdAt,
+    bool? isEdited,
   }) {
     return Customer(
       id: id ?? this.id,
@@ -128,6 +141,7 @@ class Customer extends HiveObject {
       address: address ?? this.address,
       totalDue: totalDue ?? this.totalDue,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
   
@@ -141,6 +155,7 @@ class Customer extends HiveObject {
       'address': address,
       'totalDue': totalDue,
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
     };
   }
   
@@ -154,6 +169,7 @@ class Customer extends HiveObject {
       address: json['address'],
       totalDue: json['totalDue']?.toDouble() ?? 0,
       createdAt: DateTime.parse(json['createdAt']),
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

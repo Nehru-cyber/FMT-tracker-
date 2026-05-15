@@ -28,6 +28,9 @@ class TripPlan extends HiveObject {
   @HiveField(7)
   DateTime createdAt;
 
+  @HiveField(8)
+  bool isEdited;
+
   TripPlan({
     required this.id,
     required this.userId,
@@ -37,6 +40,7 @@ class TripPlan extends HiveObject {
     this.friends = const [],
     required this.date,
     DateTime? createdAt,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   TripPlan copyWith({
@@ -48,6 +52,7 @@ class TripPlan extends HiveObject {
     List<String>? friends,
     DateTime? date,
     DateTime? createdAt,
+    bool? isEdited,
   }) {
     return TripPlan(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class TripPlan extends HiveObject {
       friends: friends ?? this.friends,
       date: date ?? this.date,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -71,6 +77,7 @@ class TripPlan extends HiveObject {
       'friends': friends,
       'date': date.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
     };
   }
 
@@ -84,6 +91,7 @@ class TripPlan extends HiveObject {
       friends: List<String>.from(json['friends'] ?? []),
       date: DateTime.parse(json['date']),
       createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

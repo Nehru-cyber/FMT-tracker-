@@ -95,6 +95,7 @@ class AppConstants {
   static const String settingsCollection = 'settings';
   static const String tripCollection = 'trip_plans';
   static const String investmentCollection = 'investments';
+  static const String wishCollection = 'wishes';
   
   // Date Formats
   static const String dateFormat = 'dd MMM yyyy';

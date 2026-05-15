@@ -27,7 +27,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadData();
+    });
   }
 
   void _loadData() {
@@ -204,26 +206,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Wish 1: Financial Fortune Cookie
+              _buildFortuneCookie(),
+              const SizedBox(height: 24),
               // Alerts Section
               const AlertsSection(),
               const SizedBox(height: 16),
               // Monthly Budget Progress
               _buildBudgetProgress(expense, settings),
               const SizedBox(height: 24),
-              // Quick Actions
               Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(child: _buildQuickAction(Icons.add_circle, 'Add Expense', AppTheme.errorColor, () => Navigator.pushNamed(context, AppRoutes.addExpense))),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildQuickAction(Icons.savings, 'Salary Plan', AppTheme.secondaryColor, () => Navigator.pushNamed(context, AppRoutes.salaryPlanner))),
+                  Expanded(child: _buildQuickAction(Icons.star, 'Wishes', Colors.amber, () => Navigator.pushNamed(context, AppRoutes.wishlist))),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildQuickAction(Icons.calculate, 'EMI Calc', AppTheme.accentColor, () => Navigator.pushNamed(context, AppRoutes.emiCalculator))),
+                  Expanded(child: _buildQuickAction(Icons.savings, 'Salary Plan', AppTheme.secondaryColor, () => Navigator.pushNamed(context, AppRoutes.salaryPlanner))),
                   const SizedBox(width: 12),
                   Expanded(child: _buildQuickAction(Icons.add, 'More', AppTheme.primaryColor, () => _showMoreActions(context))),
                 ],
               ),
+              const SizedBox(height: 24),
+              // Fun Activity: Lucky Tap
+              _buildLuckyTapButton(),
+              const SizedBox(height: 24),
               const SizedBox(height: 24),
               // Expense Chart
               if (expense.expenses.isNotEmpty) ...[
@@ -388,7 +396,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         title: Text(expense.category, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(DateFormat('dd MMM').format(expense.date)),
+        subtitle: Text(
+          DateFormat('dd MMM').format(expense.date) + 
+          (expense.isEdited ? ' (Edited)' : ''),
+          style: TextStyle(
+            fontStyle: expense.isEdited ? FontStyle.italic : FontStyle.normal,
+            color: expense.isEdited ? Colors.grey : null,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -656,4 +671,91 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _buildFortuneCookie() {
+    final tips = [
+      "Wealth is the ability to fully experience life.",
+      "A penny saved is a penny earned.",
+      "Don't save what is left after spending; spend what is left after saving.",
+      "Beware of little expenses; a small leak will sink a great ship.",
+      "The goal isn't more money. The goal is living life on your terms.",
+      "Invest in yourself. It's the best investment you'll ever make.",
+      "Budgeting is telling your money where to go instead of wondering where it went.",
+    ];
+    final tip = tips[DateTime.now().day % tips.length];
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          const Text('🥠', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Financial Fortune Cookie', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                const SizedBox(height: 4),
+                Text(tip, style: TextStyle(fontStyle: FontStyle.italic, color: Colors.amber[900], fontSize: 13)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLuckyTapButton() {
+    return Center(
+      child: GestureDetector(
+        onTap: () {
+          final luckyEvents = [
+            "You found a virtual gold coin! 🪙",
+            "Your financial karma just increased! ✨",
+            "A bird told me you're getting rich soon! 🐦",
+            "Luck is on your side today! 🍀",
+            "You just leveled up your savings game! 📈",
+          ];
+          final event = luckyEvents[DateTime.now().millisecond % luckyEvents.length];
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(event, textAlign: TextAlign.center),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppTheme.primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.touch_app, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Lucky Tap for a Wish!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
+

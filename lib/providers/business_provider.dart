@@ -91,6 +91,7 @@ class BusinessProvider extends ChangeNotifier {
       type: type,
       date: date,
       note: note,
+      isEdited: true,
     );
     await DatabaseService.saveTransaction(updated);
     _transactions = await BusinessService.getTransactions(_selectedBusiness!.id);
@@ -126,7 +127,7 @@ class BusinessProvider extends ChangeNotifier {
   }) async {
     if (_selectedBusiness == null) return;
     final existing = _customers.firstWhere((c) => c.id == id);
-    final updated = existing.copyWith(name: name, phone: phone);
+    final updated = existing.copyWith(name: name, phone: phone, isEdited: true);
     await DatabaseService.saveCustomer(updated);
     _customers = await BusinessService.getCustomers(_selectedBusiness!.id);
     notifyListeners();

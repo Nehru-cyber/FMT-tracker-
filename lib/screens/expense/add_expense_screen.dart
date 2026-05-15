@@ -23,6 +23,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
   ExpenseType _type = ExpenseType.expense;
   String _selectedCategory = 'Food';
   DateTime _selectedDate = DateTime.now();
+  String? _selectedMood;
+
+  final List<String> _moods = ['😊', '😔', '😤', '🥳', '🤔', '🍕', '💸'];
 
   final List<Map<String, dynamic>> _expenseCategories = [
     {'name': 'Food', 'icon': Icons.restaurant, 'color': const Color(0xFFFF6B6B)},
@@ -56,6 +59,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       _type = widget.expense!.type;
       _selectedCategory = widget.expense!.category;
       _selectedDate = widget.expense!.date;
+      _selectedMood = widget.expense!.mood;
     }
   }
 
@@ -81,6 +85,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         date: _selectedDate,
         type: _type,
         note: _noteController.text,
+        mood: _selectedMood,
       );
     } else {
       await context.read<ExpenseProvider>().addExpense(
@@ -90,6 +95,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         date: _selectedDate,
         type: _type,
         note: _noteController.text,
+        mood: _selectedMood,
       );
     }
 
@@ -245,6 +251,28 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 labelText: 'Note (optional)',
                 alignLabelWithHint: true,
               ),
+            ),
+            const SizedBox(height: 24),
+            // Mood Selector
+            Text('How do you feel about this?', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: _moods.map((mood) {
+                final isSelected = _selectedMood == mood;
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedMood = isSelected ? null : mood),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppTheme.primaryColor.withOpacity(0.2) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isSelected ? AppTheme.primaryColor : Colors.transparent),
+                    ),
+                    child: Text(mood, style: const TextStyle(fontSize: 24)),
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 32),
             // Save Button

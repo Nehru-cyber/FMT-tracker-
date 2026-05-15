@@ -72,8 +72,13 @@ class _TripPlanListScreenState extends State<TripPlanListScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              trip.name,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              trip.name + (trip.isEdited ? ' (Edited)' : ''),
+                              style: TextStyle(
+                                fontSize: 18, 
+                                fontWeight: FontWeight.bold,
+                                fontStyle: trip.isEdited ? FontStyle.italic : FontStyle.normal,
+                                color: trip.isEdited ? Colors.grey[700] : null,
+                              ),
                             ),
                           ),
                           IconButton(

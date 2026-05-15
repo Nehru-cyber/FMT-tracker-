@@ -63,6 +63,9 @@ class SalaryPlan extends HiveObject {
   @HiveField(9)
   bool incomeReminderEnabled;
   
+  @HiveField(10)
+  bool isEdited;
+  
   SalaryPlan({
     required this.id,
     required this.userId,
@@ -74,6 +77,7 @@ class SalaryPlan extends HiveObject {
     DateTime? updatedAt,
     this.incomeDay = 1,
     this.incomeReminderEnabled = true,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now();
   
@@ -134,6 +138,7 @@ class SalaryPlan extends HiveObject {
       'updatedAt': updatedAt.toIso8601String(),
       'incomeDay': incomeDay,
       'incomeReminderEnabled': incomeReminderEnabled,
+      'isEdited': isEdited,
     };
   }
 
@@ -155,6 +160,7 @@ class SalaryPlan extends HiveObject {
       updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : DateTime.now(),
       incomeDay: json['incomeDay'] ?? 1,
       incomeReminderEnabled: json['incomeReminderEnabled'] ?? true,
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

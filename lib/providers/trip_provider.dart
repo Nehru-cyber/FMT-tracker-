@@ -66,6 +66,7 @@ class TripProvider extends ChangeNotifier {
         dietPlan: dietPlan,
         friends: friends,
         date: date,
+        isEdited: true,
       );
       await DatabaseService.saveTripPlan(updated);
       final idx = _tripPlans.indexWhere((t) => t.id == id);

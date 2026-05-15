@@ -86,8 +86,13 @@ class _InvestmentListScreenState extends State<InvestmentListScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        investment.name,
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                        investment.name + (investment.isEdited ? ' (Edited)' : ''),
+                                        style: TextStyle(
+                                          fontSize: 18, 
+                                          fontWeight: FontWeight.bold,
+                                          fontStyle: investment.isEdited ? FontStyle.italic : FontStyle.normal,
+                                          color: investment.isEdited ? Colors.grey[700] : null,
+                                        ),
                                       ),
                                       Text(
                                         investment.type,

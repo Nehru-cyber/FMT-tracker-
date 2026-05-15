@@ -224,7 +224,15 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
                 color: isIncome ? AppTheme.secondaryColor : AppTheme.errorColor,
               ),
             ),
-            title: Text(t.note.isNotEmpty ? t.note : (isIncome ? 'Income' : 'Expense')),
+            title: Text(
+              (t.note.isNotEmpty ? t.note : (isIncome ? 'Income' : 'Expense')) + 
+              (t.isEdited ? ' (Edited)' : ''),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontStyle: t.isEdited ? FontStyle.italic : FontStyle.normal,
+                color: t.isEdited ? Colors.grey[700] : null,
+              ),
+            ),
             subtitle: Text(DateFormat('dd MMM yyyy').format(t.date)),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,
@@ -300,7 +308,14 @@ class _BusinessHomeScreenState extends State<BusinessHomeScreen> with SingleTick
           margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: CircleAvatar(child: Text(c.name[0].toUpperCase())),
-            title: Text(c.name),
+            title: Text(
+              c.name + (c.isEdited ? ' (Edited)' : ''),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontStyle: c.isEdited ? FontStyle.italic : FontStyle.normal,
+                color: c.isEdited ? Colors.grey[700] : null,
+              ),
+            ),
             subtitle: Text(c.phone),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

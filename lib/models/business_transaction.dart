@@ -39,6 +39,9 @@ class BusinessTransaction extends HiveObject {
   @HiveField(8)
   DateTime createdAt;
   
+  @HiveField(9)
+  bool isEdited;
+  
   BusinessTransaction({
     required this.id,
     required this.businessId,
@@ -49,6 +52,7 @@ class BusinessTransaction extends HiveObject {
     required this.date,
     this.category,
     DateTime? createdAt,
+    this.isEdited = false,
   }) : createdAt = createdAt ?? DateTime.now();
   
   BusinessTransaction copyWith({
@@ -61,6 +65,7 @@ class BusinessTransaction extends HiveObject {
     DateTime? date,
     String? category,
     DateTime? createdAt,
+    bool? isEdited,
   }) {
     return BusinessTransaction(
       id: id ?? this.id,
@@ -72,6 +77,7 @@ class BusinessTransaction extends HiveObject {
       date: date ?? this.date,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
   
@@ -86,6 +92,7 @@ class BusinessTransaction extends HiveObject {
       'date': date.toIso8601String(),
       'category': category,
       'createdAt': createdAt.toIso8601String(),
+      'isEdited': isEdited,
     };
   }
   
@@ -100,6 +107,7 @@ class BusinessTransaction extends HiveObject {
       date: DateTime.parse(json['date']),
       category: json['category'],
       createdAt: DateTime.parse(json['createdAt']),
+      isEdited: json['isEdited'] ?? false,
     );
   }
 }

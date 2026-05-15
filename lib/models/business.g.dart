@@ -22,14 +22,15 @@ class BusinessAdapter extends TypeAdapter<Business> {
       name: fields[2] as String,
       type: fields[3] as String,
       description: fields[4] as String?,
-      createdAt: fields[5] as DateTime,
+      createdAt: fields[5] as DateTime?,
+      isEdited: fields[6] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Business obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class BusinessAdapter extends TypeAdapter<Business> {
       ..writeByte(4)
       ..write(obj.description)
       ..writeByte(5)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(6)
+      ..write(obj.isEdited);
   }
 
   @override
@@ -73,14 +76,15 @@ class CustomerAdapter extends TypeAdapter<Customer> {
       email: fields[4] as String?,
       address: fields[5] as String?,
       totalDue: fields[6] as double,
-      createdAt: fields[7] as DateTime,
+      createdAt: fields[7] as DateTime?,
+      isEdited: fields[8] as bool,
     );
   }
 
   @override
   void write(BinaryWriter writer, Customer obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -96,7 +100,9 @@ class CustomerAdapter extends TypeAdapter<Customer> {
       ..writeByte(6)
       ..write(obj.totalDue)
       ..writeByte(7)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(8)
+      ..write(obj.isEdited);
   }
 
   @override

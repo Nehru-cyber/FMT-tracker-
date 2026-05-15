@@ -23,7 +23,7 @@ class UserAdapter extends TypeAdapter<User> {
       phone: fields[3] as String,
       isPremium: fields[4] as bool,
       currency: fields[5] as String,
-      createdAt: fields[6] as DateTime,
+      createdAt: fields[6] as DateTime?,
       isGuest: fields[7] as bool,
       biometricEnabled: fields[8] as bool,
       password: fields[9] as String?,
