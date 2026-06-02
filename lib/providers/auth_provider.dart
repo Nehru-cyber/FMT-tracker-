@@ -27,6 +27,7 @@ class AuthProvider extends ChangeNotifier {
   }
   
   Future<void> _loadUser() async {
+    if (!DatabaseService.isInitialized) return;
     _user = await DatabaseService.getLoggedInUser();
     notifyListeners();
   }

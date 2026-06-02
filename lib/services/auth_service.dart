@@ -1,5 +1,6 @@
 import '../models/user.dart';
 import 'database_service.dart';
+import 'security_service.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -59,9 +60,9 @@ class AuthService {
       final user = User(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: name,
-        email: email,
+        email: email.toLowerCase(),
         phone: phone,
-        password: _hashPassword(password),
+        password: SecurityService.hashPassword(password),
       );
 
       await DatabaseService.saveUser(user);
@@ -85,7 +86,7 @@ class AuthService {
         throw Exception('User not found');
       }
 
-      if (user.password != _hashPassword(password)) {
+      if (user.password != SecurityService.hashPassword(password)) {
         throw Exception('Invalid password');
       }
 
@@ -135,7 +136,7 @@ class AuthService {
   // Save credentials for quick login (remember me)
   static Future<void> saveCredentials(String email, String password) async {
     await DatabaseService.saveSetting('saved_email', email);
-    await DatabaseService.saveSetting('saved_password', _hashPassword(password));
+    await DatabaseService.saveSetting('saved_password', SecurityService.hashPassword(password));
     await DatabaseService.saveSetting('remember_me', true);
   }
 
@@ -187,15 +188,7 @@ class AuthService {
     await DatabaseService.saveSetting('currentUserId', null);
   }
 
-  // Simple password hashing
-  static String _hashPassword(String password) {
-    var hash = 0;
-    for (var i = 0; i < password.length; i++) {
-      hash = ((hash << 5) - hash) + password.codeUnitAt(i);
-      hash = hash & hash;
-    }
-    return hash.toString();
-  }
+  // Password hashing is now handled by SecurityService
 
   // Check if user is logged in
   static Future<bool> isLoggedIn() async {

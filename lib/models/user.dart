@@ -96,6 +96,7 @@ class User extends HiveObject {
       'createdAt': createdAt.toIso8601String(),
       'isGuest': isGuest,
       'biometricEnabled': biometricEnabled,
+      'password': password,
       'photoPath': photoPath,
       'bio': bio,
     };
@@ -112,6 +113,7 @@ class User extends HiveObject {
       createdAt: DateTime.parse(json['createdAt']),
       isGuest: json['isGuest'] ?? false,
       biometricEnabled: json['biometricEnabled'] ?? false,
+      password: json['password'],
       photoPath: json['photoPath'],
       bio: json['bio'],
     );

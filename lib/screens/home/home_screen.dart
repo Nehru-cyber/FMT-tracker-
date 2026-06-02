@@ -12,6 +12,7 @@ import '../../providers/salary_provider.dart';
 import '../../models/expense.dart';
 import '../../widgets/charts/pie_chart_widget.dart';
 import '../../widgets/home/alerts_section.dart';
+import '../../widgets/home/smart_message_input.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -206,6 +207,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Smart Message Input for tracking
+              SmartMessageInput(onTransactionAdded: _loadData),
+              const SizedBox(height: 24),
               // Wish 1: Financial Fortune Cookie
               _buildFortuneCookie(),
               const SizedBox(height: 24),
@@ -215,17 +219,39 @@ class _HomeScreenState extends State<HomeScreen> {
               // Monthly Budget Progress
               _buildBudgetProgress(expense, settings),
               const SizedBox(height: 24),
-              Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+                  TextButton.icon(
+                    onPressed: () => _showEditQuickActions(context),
+                    icon: const Icon(Icons.edit_note, size: 18),
+                    label: const Text('Edit'),
+                  ),
+                ],
+              ),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildQuickAction(Icons.add_circle, 'Add Expense', AppTheme.errorColor, () => Navigator.pushNamed(context, AppRoutes.addExpense))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildQuickAction(Icons.star, 'Wishes', Colors.amber, () => Navigator.pushNamed(context, AppRoutes.wishlist))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildQuickAction(Icons.savings, 'Salary Plan', AppTheme.secondaryColor, () => Navigator.pushNamed(context, AppRoutes.salaryPlanner))),
-                  const SizedBox(width: 12),
-                  Expanded(child: _buildQuickAction(Icons.add, 'More', AppTheme.primaryColor, () => _showMoreActions(context))),
+                  ...settings.activeQuickActions.map((action) => Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: _buildQuickAction(
+                        action.icon,
+                        action.title,
+                        action.color,
+                        () => Navigator.pushNamed(context, action.route).then((_) => _loadData()),
+                      ),
+                    ),
+                  )),
+                  Expanded(
+                    child: _buildQuickAction(
+                      Icons.add,
+                      'More',
+                      AppTheme.primaryColor,
+                      () => _showMoreActions(context),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -302,6 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showMoreActions(BuildContext context) {
+    final settings = context.read<SettingsProvider>();
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -313,24 +340,124 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('More Actions', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildMoreActionItem(Icons.flight_takeoff, 'Trip Planner', Colors.deepOrange, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.tripPlanner); }),
-                _buildMoreActionItem(Icons.trending_up, 'Investments', Colors.green, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.investments); }),
-                _buildMoreActionItem(Icons.fitness_center, 'Gym Tracker', Colors.deepPurple, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.gymTracker); }),
-                _buildMoreActionItem(Icons.restaurant_menu, 'Diet Tracker', Colors.teal, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.dietTracker); }),
-                _buildMoreActionItem(Icons.access_time, 'Clock', Colors.orange, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.clock); }),
-                _buildMoreActionItem(Icons.store, 'Business', AppTheme.primaryColor, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.business); }),
-                _buildMoreActionItem(Icons.analytics, 'Analytics', Colors.purple, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.analytics); }),
-                _buildMoreActionItem(Icons.file_download, 'Export', Colors.teal.shade700, () { Navigator.pop(context); Navigator.pushNamed(context, AppRoutes.export); }),
+                Text('More Actions', style: Theme.of(context).textTheme.titleLarge),
+                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
               ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 250,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.8,
+                ),
+                itemCount: settings.allQuickActions.length,
+                itemBuilder: (context, index) {
+                  final action = settings.allQuickActions[index];
+                  return _buildMoreActionItem(
+                    action.icon,
+                    action.title,
+                    action.color,
+                    () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, action.route).then((_) => _loadData());
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditQuickActions(BuildContext context) {
+    final settings = context.read<SettingsProvider>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final activeIds = settings.activeQuickActionIds;
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 20,
+              left: 16,
+              right: 16,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Edit Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+                        Text('Select up to 3 actions for your home screen', style: Theme.of(context).textTheme.bodySmall),
+                      ],
+                    ),
+                    IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: settings.allQuickActions.length,
+                    itemBuilder: (context, index) {
+                      final action = settings.allQuickActions[index];
+                      final isSelected = activeIds.contains(action.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        title: Text(action.title),
+                        secondary: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: action.color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(action.icon, color: action.color),
+                        ),
+                        onChanged: (val) {
+                          if (val == true && activeIds.length >= 3) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Max 3 quick actions allowed')),
+                            );
+                            return;
+                          }
+                          if (val == false && activeIds.length <= 1) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('At least 1 quick action required')),
+                            );
+                            return;
+                          }
+                          settings.toggleQuickAction(action.id);
+                          setModalState(() {});
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

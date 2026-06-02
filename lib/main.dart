@@ -23,15 +23,15 @@ void main() async {
   
   // Initialize Database
   try {
-    await DatabaseService.initialize().timeout(const Duration(seconds: 3));
+    await DatabaseService.initialize();
   } catch (e) {
     debugPrint('Database initialization failed: $e');
   }
   
   // Initialize Notifications
   try {
-    await NotificationService.initialize().timeout(const Duration(seconds: 2));
-    await NotificationService.requestPermissions().timeout(const Duration(seconds: 2));
+    await NotificationService.initialize().timeout(const Duration(seconds: 5));
+    await NotificationService.requestPermissions().timeout(const Duration(seconds: 5));
   } catch (e) {
     debugPrint('Notification initialization failed: $e');
   }
@@ -41,7 +41,7 @@ void main() async {
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
-    ]).timeout(const Duration(seconds: 2));
+    ]);
   } catch (e) {
     debugPrint('Orientation setup failed: $e');
   }

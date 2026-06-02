@@ -11,6 +11,7 @@ import '../models/trip_plan.dart';
 import '../models/investment.dart';
 import '../models/wish.dart';
 import '../config/constants.dart';
+import 'security_service.dart';
 
 class DatabaseService {
   static late Box _usersBox;
@@ -34,18 +35,26 @@ class DatabaseService {
     try {
       await Hive.initFlutter();
       
-      _usersBox = await Hive.openBox(AppConstants.userCollection);
-      _expensesBox = await Hive.openBox(AppConstants.expenseCollection);
-      _categoriesBox = await Hive.openBox(AppConstants.categoryCollection);
-      _salaryBox = await Hive.openBox(AppConstants.salaryCollection);
-      _emiBox = await Hive.openBox(AppConstants.emiCollection);
-      _businessBox = await Hive.openBox(AppConstants.businessCollection);
-      _customerBox = await Hive.openBox(AppConstants.customerCollection);
-      _transactionBox = await Hive.openBox(AppConstants.transactionCollection);
-      _tripBox = await Hive.openBox(AppConstants.tripCollection);
-      _investmentBox = await Hive.openBox(AppConstants.investmentCollection);
-      _wishBox = await Hive.openBox(AppConstants.wishCollection);
-      _settingsBox = await Hive.openBox(AppConstants.settingsCollection);
+      HiveAesCipher? cipher;
+      try {
+        final encryptionKey = await SecurityService.getEncryptionKey();
+        cipher = HiveAesCipher(encryptionKey);
+      } catch (e) {
+        debugPrint('Encryption setup failed, using unencrypted boxes: $e');
+      }
+      
+      _usersBox = await _openBoxSafe(AppConstants.userCollection, cipher);
+      _expensesBox = await _openBoxSafe(AppConstants.expenseCollection, cipher);
+      _categoriesBox = await _openBoxSafe(AppConstants.categoryCollection, cipher);
+      _salaryBox = await _openBoxSafe(AppConstants.salaryCollection, cipher);
+      _emiBox = await _openBoxSafe(AppConstants.emiCollection, cipher);
+      _businessBox = await _openBoxSafe(AppConstants.businessCollection, cipher);
+      _customerBox = await _openBoxSafe(AppConstants.customerCollection, cipher);
+      _transactionBox = await _openBoxSafe(AppConstants.transactionCollection, cipher);
+      _tripBox = await _openBoxSafe(AppConstants.tripCollection, cipher);
+      _investmentBox = await _openBoxSafe(AppConstants.investmentCollection, cipher);
+      _wishBox = await _openBoxSafe(AppConstants.wishCollection, cipher);
+      _settingsBox = await _openBoxSafe(AppConstants.settingsCollection, cipher);
 
       // Initialize default categories if empty
       if (_categoriesBox.isEmpty) {
@@ -56,6 +65,22 @@ class DatabaseService {
       debugPrint('DatabaseService.initialize error: $e');
       _isInitialized = false;
       rethrow;
+    }
+  }
+
+  static Future<Box> _openBoxSafe(String name, HiveAesCipher? cipher) async {
+    try {
+      return await Hive.openBox(name, encryptionCipher: cipher);
+    } catch (e) {
+      debugPrint('Failed to open box $name with cipher, trying without: $e');
+      try {
+        // Try deleting corrupted box and reopening
+        await Hive.deleteBoxFromDisk(name);
+        return await Hive.openBox(name, encryptionCipher: cipher);
+      } catch (e2) {
+        debugPrint('Failed again, opening without encryption: $e2');
+        return await Hive.openBox(name);
+      }
     }
   }
 
@@ -281,7 +306,9 @@ class DatabaseService {
 
   // Find user by email (for login)
   static Future<User?> findUserByEmail(String email) async {
-    final docs = _usersBox.values.where((doc) => doc['email'] == email);
+    if (!_isInitialized) return null;
+    final lowerEmail = email.toLowerCase();
+    final docs = _usersBox.values.where((doc) => (doc['email'] as String?)?.toLowerCase() == lowerEmail);
     if (docs.isEmpty) return null;
     return User.fromJson(Map<String, dynamic>.from(docs.first));
   }

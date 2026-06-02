@@ -5,6 +5,7 @@ import 'dart:math';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
+import '../services/security_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -59,18 +60,22 @@ class _SplashScreenState extends State<SplashScreen>
     final authProvider = context.read<AuthProvider>();
 
     if (authProvider.isLoggedIn) {
-      // If biometric lock is enabled, verify before entering home
-      if (authProvider.biometricEnabled) {
-        final authenticated = await authProvider.quickLoginWithBiometric();
-        if (!mounted) return;
-        if (authenticated) {
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
-        } else {
-          // Biometric failed, send to login screen
-          Navigator.pushReplacementNamed(context, AppRoutes.login);
-        }
-      } else {
+      // Shield Mode: Mandatory biometric verification for all sessions
+      final authenticated = await SecurityService.authenticate();
+      if (!mounted) return;
+      
+      if (authenticated) {
         Navigator.pushReplacementNamed(context, AppRoutes.home);
+      } else {
+        // Access Denied: Force re-login if biometric fails or is cancelled
+        await authProvider.logout();
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Security Verification Required'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
       }
     } else {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
