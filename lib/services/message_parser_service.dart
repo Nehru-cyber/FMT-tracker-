@@ -19,56 +19,33 @@ class ParsedTransaction {
 class MessageParserService {
   // Keywords that indicate income
   static const List<String> _incomeKeywords = [
-    'salary', 'received', 'got', 'earned', 'income', 'paid me',
-    'credited', 'bonus', 'freelance', 'payment received', 'refund',
-    'cashback', 'dividend', 'interest', 'gift received', 'won',
+    'credited', 'received', 'deposited', 'refund', 'cashback', 'added',
+    'salary', 'income'
   ];
 
   // Keywords that indicate expense
   static const List<String> _expenseKeywords = [
-    'spent', 'paid', 'bought', 'purchased', 'expense', 'bill',
-    'emi', 'rent', 'food', 'petrol', 'fuel', 'grocery', 'groceries',
-    'shopping', 'recharge', 'movie', 'ticket', 'ordered', 'ate',
-    'dinner', 'lunch', 'breakfast', 'snack', 'coffee', 'tea',
-    'uber', 'ola', 'cab', 'auto', 'bus', 'train', 'flight',
-    'medicine', 'doctor', 'hospital', 'gym', 'subscription',
-    'netflix', 'amazon', 'swiggy', 'zomato', 'electricity',
-    'water', 'gas', 'internet', 'mobile', 'phone',
+    'debited', 'sent', 'paid', 'withdrawn', 'deducted', 'transferred to',
+    'spent', 'purchased', 'expense', 'bill'
   ];
 
   // Category mapping based on keywords in message
   static const Map<String, List<String>> _categoryKeywords = {
-    'Food': ['food', 'restaurant', 'ate', 'dinner', 'lunch', 'breakfast',
-             'snack', 'coffee', 'tea', 'swiggy', 'zomato', 'ordered',
-             'biryani', 'pizza', 'burger', 'meal', 'eat', 'grocery', 'groceries'],
-    'Travel': ['travel', 'uber', 'ola', 'cab', 'auto', 'bus', 'train',
-               'flight', 'petrol', 'fuel', 'diesel', 'toll', 'parking'],
-    'Rent': ['rent', 'house rent', 'room rent', 'pg'],
-    'Shopping': ['shopping', 'bought', 'purchased', 'amazon', 'flipkart',
-                 'clothes', 'shoes', 'dress', 'shirt', 'pant'],
-    'Medical': ['medical', 'medicine', 'doctor', 'hospital', 'pharmacy',
-                'health', 'clinic', 'test', 'checkup'],
-    'Entertainment': ['movie', 'netflix', 'hotstar', 'prime', 'game',
-                      'party', 'outing', 'fun', 'concert', 'show'],
-    'Bills': ['bill', 'electricity', 'water', 'gas', 'internet', 'wifi',
-              'mobile', 'phone', 'recharge', 'emi', 'insurance', 'subscription'],
-    'Education': ['education', 'course', 'book', 'tuition', 'class',
-                  'exam', 'fee', 'fees', 'college', 'school', 'udemy'],
-    'Salary': ['salary', 'wages', 'pay day', 'monthly pay'],
-    'Freelance': ['freelance', 'project', 'client', 'gig', 'side hustle',
-                  'contract', 'consulting'],
-    'Investment': ['investment', 'dividend', 'interest', 'mutual fund',
-                   'stocks', 'shares', 'sip', 'fd', 'rd'],
-    'Gift': ['gift', 'birthday', 'present', 'received gift', 'won'],
+    'Food & Dining': ['zomato', 'swiggy', 'blinkit', 'dunzo', 'restaurant', 'cafe', 'food', 'pizza', 'burger', 'meal', 'eat'],
+    'Transport': ['uber', 'ola', 'rapido', 'irctc', 'makemytrip', 'petrol', 'fuel', 'cab', 'auto', 'bus', 'train', 'flight'],
+    'Shopping': ['amazon', 'flipkart', 'myntra', 'meesho', 'nykaa', 'shopping', 'bought', 'purchased', 'clothes'],
+    'Subscriptions': ['netflix', 'spotify', 'hotstar', 'youtube', 'jio', 'airtel', 'subscription', 'prime'],
+    'Health': ['apollo', 'pharmeasy', 'hospital', 'clinic', 'medicine', 'medical', 'doctor', 'pharmacy', 'health'],
+    'Utilities': ['electricity', 'water', 'gas', 'bescom', 'mseb', 'bses', 'bill', 'internet', 'wifi', 'recharge'],
+    'Salary / Income': ['salary', 'stipend', 'wages', 'pay day', 'monthly pay'],
+    'ATM Withdrawal': ['atm', 'cash withdrawal'],
+    'Friends & Family': [], // Handled via special logic
+    'Other': ['misc']
   };
 
   // Source mapping for income
   static const Map<String, List<String>> _sourceKeywords = {
-    'Company/Job': ['salary', 'company', 'office', 'job', 'work', 'employer'],
-    'Freelance': ['freelance', 'project', 'client', 'gig', 'contract'],
-    'Business': ['business', 'shop', 'store', 'sales', 'revenue'],
-    'Investment': ['investment', 'dividend', 'interest', 'mutual fund', 'stocks', 'sip'],
-    'Gift': ['gift', 'birthday', 'won', 'lottery', 'reward'],
+    'Salary / Income': ['salary', 'employer'],
     'Refund': ['refund', 'cashback', 'return'],
     'Other': ['other', 'misc'],
   };
@@ -153,11 +130,29 @@ class MessageParserService {
   /// Determine category based on message content
   static String _determineCategory(String message, ExpenseType type) {
     int bestScore = 0;
-    String bestCategory = type == ExpenseType.income ? 'Salary' : 'Other';
+    String bestCategory = type == ExpenseType.income ? 'Salary / Income' : 'Other';
+
+    // 1. Friends & Family check (Special Logic)
+    if (type == ExpenseType.expense) {
+      // Look for "sent to [name]", "paid [name]", "transferred to [name]"
+      if (RegExp(r'(sent|paid|transferred to)\s+(?:rs\.?|inr|₹)?\s*\d+(?:\.\d+)?\s+(?:to\s+)?([a-z]+)', caseSensitive: false).hasMatch(message)) {
+        // We can't perfectly know if it's a name, but if it doesn't match business rules below, it's a strong indicator.
+        // Also check for personal UPI IDs (name@bank)
+        if (RegExp(r'\b[a-z]{3,}@(okaxis|ybl|ibl|sbi|icici|hdfcbank|paytm|axl)\b', caseSensitive: false).hasMatch(message)) {
+          // Exclude known business upi ids
+          if (!RegExp(r'(zomato|swiggy|amazon|netflix|flipkart|uber|ola)@', caseSensitive: false).hasMatch(message)) {
+            return 'Friends & Family';
+          }
+        }
+      }
+      if (message.contains("paid ") && !message.contains("zomato") && !message.contains("swiggy") && !message.contains("amazon") && !message.contains("uber")) {
+         // basic fallback
+      }
+    }
 
     final relevantCategories = type == ExpenseType.income
-        ? ['Salary', 'Freelance', 'Investment', 'Gift']
-        : ['Food', 'Travel', 'Rent', 'Shopping', 'Medical', 'Entertainment', 'Bills', 'Education'];
+        ? ['Salary / Income', 'Refund', 'Other']
+        : ['Food & Dining', 'Transport', 'Shopping', 'Subscriptions', 'Health', 'Utilities', 'ATM Withdrawal', 'Friends & Family', 'Other'];
 
     for (final category in relevantCategories) {
       final keywords = _categoryKeywords[category];
@@ -172,6 +167,13 @@ class MessageParserService {
         bestScore = score;
         bestCategory = category;
       }
+    }
+    
+    // Additional Friends & Family fallback if no other category matched well
+    if (bestCategory == 'Other' && type == ExpenseType.expense) {
+       if (RegExp(r'\b[a-z]{3,}@(okaxis|ybl|ibl|sbi|icici|hdfcbank|paytm|axl|upi)\b', caseSensitive: false).hasMatch(message)) {
+         return 'Friends & Family';
+       }
     }
 
     return bestCategory;

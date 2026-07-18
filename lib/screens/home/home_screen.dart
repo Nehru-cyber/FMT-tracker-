@@ -207,12 +207,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Smart Message Input for tracking
-              SmartMessageInput(onTransactionAdded: _loadData),
-              const SizedBox(height: 24),
               // Wish 1: Financial Fortune Cookie
-              _buildFortuneCookie(),
-              const SizedBox(height: 24),
+              if (settings.fortuneCookieClosedDate != DateTime.now().toIso8601String().split('T')[0]) ...[
+                _buildFortuneCookie(settings),
+                const SizedBox(height: 24),
+              ],
               // Alerts Section
               const AlertsSection(),
               const SizedBox(height: 16),
@@ -799,7 +798,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFortuneCookie() {
+  Widget _buildFortuneCookie(SettingsProvider settings) {
     final tips = [
       "Wealth is the ability to fully experience life.",
       "A penny saved is a penny earned.",
@@ -812,7 +811,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final tip = tips[DateTime.now().day % tips.length];
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
       decoration: BoxDecoration(
         color: Colors.amber.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
@@ -831,6 +830,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(tip, style: TextStyle(fontStyle: FontStyle.italic, color: Colors.amber[900], fontSize: 13)),
               ],
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20, color: Colors.amber),
+            onPressed: () => settings.closeFortuneCookie(),
           ),
         ],
       ),

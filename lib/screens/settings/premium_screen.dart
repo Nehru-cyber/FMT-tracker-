@@ -224,6 +224,8 @@ class PremiumScreen extends StatelessWidget {
   }
 
   void _subscribe(BuildContext context, bool isYearly) async {
+    final authProvider = context.read<AuthProvider>();
+
     // Simulate subscription
     showDialog(
       context: context,
@@ -233,6 +235,9 @@ class PremiumScreen extends StatelessWidget {
 
     await Future.delayed(const Duration(seconds: 2));
     await PremiumService.activatePremium(isYearly: isYearly);
+
+    // Refresh the auth provider so isPremium updates immediately
+    await authProvider.refreshUser();
 
     Navigator.pop(context); // Close loading
     Navigator.pop(context); // Go back

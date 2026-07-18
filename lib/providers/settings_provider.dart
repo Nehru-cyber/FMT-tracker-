@@ -9,14 +9,17 @@ class SettingsProvider extends ChangeNotifier {
   String _currency = AppConstants.defaultCurrency;
   bool _notificationsEnabled = true;
   List<String> _activeQuickActions = ['add_expense', 'wishlist', 'salary_planner'];
+  String? _fortuneCookieClosedDate;
 
   String get currency => _currency;
   String get currencySymbol => AppConstants.currencies[_currency] ?? '₹';
   bool get notificationsEnabled => _notificationsEnabled;
   List<String> get activeQuickActionIds => _activeQuickActions;
+  String? get fortuneCookieClosedDate => _fortuneCookieClosedDate;
 
   final List<QuickActionModel> allQuickActions = [
     QuickActionModel(id: 'add_expense', title: 'Add Expense', icon: Icons.add_circle, route: AppRoutes.addExpense, color: AppTheme.errorColor),
+    QuickActionModel(id: 'ai_assistant', title: 'AI Assistant', icon: Icons.smart_toy, route: AppRoutes.assistant, color: Colors.blue),
     QuickActionModel(id: 'wishlist', title: 'Wishes', icon: Icons.star, route: AppRoutes.wishlist, color: Colors.amber),
     QuickActionModel(id: 'salary_planner', title: 'Salary Plan', icon: Icons.savings, route: AppRoutes.salaryPlanner, color: AppTheme.secondaryColor),
     QuickActionModel(id: 'trip_planner', title: 'Trip Planner', icon: Icons.flight_takeoff, route: AppRoutes.tripPlanner, color: Colors.deepOrange),
@@ -46,6 +49,7 @@ class SettingsProvider extends ChangeNotifier {
     if (savedActions != null) {
       _activeQuickActions = List<String>.from(savedActions);
     }
+    _fortuneCookieClosedDate = await DatabaseService.getSetting('fortuneCookieClosedDate');
     notifyListeners();
   }
 
@@ -78,6 +82,13 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> updateQuickActions(List<String> actionIds) async {
     _activeQuickActions = actionIds;
     await DatabaseService.saveSetting('quickActions', _activeQuickActions);
+    notifyListeners();
+  }
+
+  Future<void> closeFortuneCookie() async {
+    final today = DateTime.now().toIso8601String().split('T')[0];
+    _fortuneCookieClosedDate = today;
+    await DatabaseService.saveSetting('fortuneCookieClosedDate', today);
     notifyListeners();
   }
 }

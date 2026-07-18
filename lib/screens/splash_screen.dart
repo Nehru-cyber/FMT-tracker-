@@ -5,6 +5,7 @@ import 'dart:math';
 import '../config/theme.dart';
 import '../config/routes.dart';
 import '../providers/auth_provider.dart';
+import '../services/database_service.dart';
 import '../services/security_service.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -59,6 +60,10 @@ class _SplashScreenState extends State<SplashScreen>
 
     final authProvider = context.read<AuthProvider>();
 
+    // Wait for the auth provider to finish loading user from DB
+    await authProvider.initialized;
+    if (!mounted) return;
+
     if (authProvider.isLoggedIn) {
       // Shield Mode: Mandatory biometric verification for all sessions
       final authenticated = await SecurityService.authenticate();
@@ -78,7 +83,16 @@ class _SplashScreenState extends State<SplashScreen>
         );
       }
     } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+      // Show onboarding only once (on first install)
+      final onboardingDone = await DatabaseService.getSetting(
+        'onboarding_completed',
+        defaultValue: false,
+      );
+      if (onboardingDone == true) {
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
+      }
     }
   }
 

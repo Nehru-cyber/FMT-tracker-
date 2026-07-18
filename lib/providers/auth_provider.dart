@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
@@ -9,6 +10,7 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   bool _biometricAvailable = false;
   bool _rememberMeEnabled = false;
+  final Completer<void> _initCompleter = Completer<void>();
   
   User? get user => _user;
   bool get isLoading => _isLoading;
@@ -20,6 +22,9 @@ class AuthProvider extends ChangeNotifier {
   bool get biometricEnabled => _user?.biometricEnabled ?? false;
   bool get rememberMeEnabled => _rememberMeEnabled;
   bool get canQuickLogin => _biometricAvailable && _rememberMeEnabled;
+
+  /// Completes when the initial user load from DB is done.
+  Future<void> get initialized => _initCompleter.future;
   
   AuthProvider() {
     _loadUser();
@@ -27,6 +32,22 @@ class AuthProvider extends ChangeNotifier {
   }
   
   Future<void> _loadUser() async {
+    try {
+      if (!DatabaseService.isInitialized) {
+        if (!_initCompleter.isCompleted) _initCompleter.complete();
+        return;
+      }
+      _user = await DatabaseService.getLoggedInUser();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('AuthProvider._loadUser error: $e');
+    } finally {
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+    }
+  }
+
+  /// Refresh user data from DB (e.g. after premium activation).
+  Future<void> refreshUser() async {
     if (!DatabaseService.isInitialized) return;
     _user = await DatabaseService.getLoggedInUser();
     notifyListeners();

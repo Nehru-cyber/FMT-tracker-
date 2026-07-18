@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../config/routes.dart';
 import '../config/theme.dart';
+import '../services/database_service.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -50,7 +51,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Align(
               alignment: Alignment.topRight,
               child: TextButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.login),
+                onPressed: () async {
+                  await DatabaseService.saveSetting('onboarding_completed', true);
+                  if (!context.mounted) return;
+                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                },
                 child: const Text('Skip'),
               ),
             ),
@@ -127,13 +132,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_currentPage < _pages.length - 1) {
                         _pageController.nextPage(
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut,
                         );
                       } else {
+                        await DatabaseService.saveSetting('onboarding_completed', true);
+                        if (!context.mounted) return;
                         Navigator.pushReplacementNamed(context, AppRoutes.login);
                       }
                     },

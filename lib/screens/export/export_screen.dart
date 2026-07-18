@@ -45,12 +45,14 @@ class _ExportScreenState extends State<ExportScreen> {
     setState(() => _isExporting = true);
     try {
       final expenses = context.read<ExpenseProvider>().expenses;
+      final currencySymbol = context.read<SettingsProvider>().currencySymbol;
 
       final file = await ExportService.exportToPDF(
         expenses: expenses,
         title: 'FMT Tracker Report',
         startDate: _startDate,
         endDate: _endDate,
+        currencySymbol: currencySymbol,
       );
 
       await ExportService.shareFile(file);

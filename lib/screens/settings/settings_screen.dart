@@ -5,6 +5,7 @@ import '../../config/constants.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/sms_service.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -98,6 +99,26 @@ class SettingsScreen extends StatelessWidget {
           const Divider(),
           // Data Section
           _buildSectionHeader(context, 'Data'),
+          ListTile(
+            leading: const Icon(Icons.sms),
+            title: const Text('Import Bank SMS'),
+            subtitle: const Text('Scan inbox for bank messages'),
+            onTap: () => SmsService.readInbox(context, auth.user!.id),
+          ),
+          ListTile(
+            leading: const Icon(Icons.phonelink_ring),
+            title: const Text('Auto-read Bank SMS'),
+            subtitle: const Text('Listen for incoming bank SMS'),
+            trailing: IconButton(
+              icon: const Icon(Icons.play_arrow),
+              onPressed: () {
+                SmsService.startListening(context, auth.user!.id);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Started listening for incoming SMS')),
+                );
+              },
+            ),
+          ),
           ListTile(
             leading: const Icon(Icons.backup),
             title: const Text('Backup Data'),
